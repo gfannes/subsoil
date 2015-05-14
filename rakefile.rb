@@ -4,7 +4,13 @@ task :setup do
 end
 
 task :serve do
-    Dir.chdir('web') do
-        sh 'jekyll serve'
+    Dir.chdir('web'){sh 'jekyll serve'}
+end
+task :build do
+    Dir.chdir('web'){sh 'jekyll build'}
+end
+task :publish => :build do
+    Dir.chdir('web/_site') do
+        sh 'scp -r * web-gfannes@ssh.linuxsystems.be:fannes.com/www/subsoil'
     end
 end
