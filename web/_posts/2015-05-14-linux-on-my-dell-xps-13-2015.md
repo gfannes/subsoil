@@ -15,6 +15,8 @@ Hibernation and suspension still gave problems. Replacing the SNA graphics drive
 
 After an unsuccessfull test with i3, I exchanged XFCE for Gnome3 which works very well in combination with the HiDPI touchscreen, only the screen keyboard keeps popping up from time to time, but I don't mind that, it should be easy to fix. Hibernation was back though but in a different shape: Gnome3 Power settings gives no options to handle closing the lid. After installing the _gnome-power-manager_, I could manually indicate in /etc/systemd/logind.conf that my machine should _hibernate_ when closing its lid, and _shutdown_ when pressing the power button.
 
+Finally, the printer setup failed although I could configure my HP Photosmart 2610 before. It turns out to be a problem with the foomatic-\* and manjaro-printer package. After uninstallation, I could successfully intall my printer.
+
 I have a fully functional laptop now with readable fonts and great HiDPI support! Scrolling via the touchscreen works in most applications, as is two finger zoom in the default web browser (some browser called _web_, based on webkit). The only problem I still have has to do with the microphone, it shows up, but I cannot get sound out of it. I use a Logitech C920 webcam instead which works fine out of the box.
 
 I hope these directions can help other people configure their Dell XPS 13 for linux. It took me some time and experimentation, but now I'm very happy with it. Quite a shame for Dell though to put such a badly configured machine on the market...
