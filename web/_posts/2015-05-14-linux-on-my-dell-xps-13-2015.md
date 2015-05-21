@@ -22,3 +22,5 @@ I have a fully functional laptop now with readable fonts and great HiDPI support
 I hope these directions can help other people configure their Dell XPS 13 for linux. It took me some time and experimentation, but now I'm very happy with it. Quite a shame for Dell though to put such a badly configured machine on the market...
 
 This article is not very high in details, mostly because I don't want to go through the process again just to take detailed notes. If you want more details or are stuck, don't hesitate to contact me.
+
+_update:_ To disable the caribou onscreen keyboard, comment-out the _Exec_ lines in _/usr/share/dbus-1/services/org.gnome.Caribou.*_.
