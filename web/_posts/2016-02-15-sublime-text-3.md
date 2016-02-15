@@ -30,7 +30,7 @@ To get [sublime text](http://www.sublimetext.com) up-and-running and usable for 
 
 * Change color scheme: the _SpaceCadet_ is nice, but I find it hard to see the cursor (_caret_). To change its color for sublime text 3, do the following:
 
-    * Install `PackageResourceViewer` via the palette.
+    * Install `PackageResourceViewer` via the `Package Control`.
     * Select `PackageResourceViewer: Open Resource` via the palette.
     * Select `Color Scheme - Default->SpaceCadet.tmTheme`.
     * Adjust the color for _selection_ from `#40002F` to e.g., `#2eaa40`.
