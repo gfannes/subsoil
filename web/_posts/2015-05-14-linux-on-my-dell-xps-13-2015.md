@@ -15,6 +15,16 @@ Hibernation and suspension still gave problems. Replacing the SNA graphics drive
 
 After an unsuccessfull test with i3, I exchanged XFCE for Gnome3 which works very well in combination with the HiDPI touchscreen, only the screen keyboard keeps popping up from time to time, but I don't mind that, it should be easy to fix. Hibernation was back though but in a different shape: Gnome3 Power settings gives no options to handle closing the lid. After installing the _gnome-power-manager_, I could manually indicate in /etc/systemd/logind.conf that my machine should _hibernate_ when closing its lid, and _shutdown_ when pressing the power button.
 
+If you cannot configure the touchpad (a DLL0665) to _tap-to-click_, it is probably detected as a mouse in stead of a touchpad. Install `xf86-input-libinput`, issue `sudo libinput-list-devices` and find the `DLL0665` section. Add a xorg config file that identifies this device and enabled tapping by adding a config file `/etc/X11/xorg.conf.d/50-libinput.conf`, making sure the `MatchProduct` matches the `Device:` string as listed by libinput:
+
+    Section "InputClass"
+    	Identifier "touchpad"
+    	MatchProduct "DLL0665:01 06CB:76AD UNKNOWN"
+    	Driver "libinput"
+    	Option	"Tapping"	"on"
+    	Option	"AccelSpeed"	"1"
+    EndSection
+
 Finally, the printer setup failed although I could configure my HP Photosmart 2610 before. It turns out to be a problem with the foomatic-\* and manjaro-printer package. After uninstallation, I could successfully intall my printer.
 
 I have a fully functional laptop now with readable fonts and great HiDPI support! Scrolling via the touchscreen works in most applications, as is two finger zoom in the default web browser (some browser called _web_, based on webkit). The only problem I still have has to do with the microphone, it shows up, but I cannot get sound out of it. I use a Logitech C920 webcam instead which works fine out of the box.
