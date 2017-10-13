@@ -1,0 +1,15 @@
+include("../gubg")
+add_book("subsoil", fun(b){
+    add_recipe("func", fun(r){
+        r.add_header("src", "**/*.hpp")
+        r.add_source("src", "**/*.cpp")
+        r.depends_on("gubg.func")
+    })
+})
+add_book("toolbox", fun(b){
+    add_recipe("exe", fun(r){
+        r.target_type(executable)
+        r.add_source("toolbox/src", "*.cpp")
+        r.depends_on("subsoil.func")
+    })
+})
