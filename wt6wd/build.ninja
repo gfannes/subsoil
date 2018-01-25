@@ -1,0 +1,96 @@
+cflags_cpp = -g -Os -w -std=gnu++11 -fpermissive -fno-exceptions -ffunction-sections -fdata-sections -fno-threadsafe-statics -MMD -flto -fno-devirtualize -fno-use-cxa-atexit
+cflags_c = -g -Os -w -std=gnu11 -ffunction-sections -fdata-sections -MMD -flto -fno-fat-lto-objects
+cflags_asm = -g -x assembler-with-cpp -flto -MMD
+cflags_mega = -mmcu=atmega2560 -DF_CPU=16000000L -DARDUINO=10805 -DARDUINO_AVR_MEGA2560 -DARDUINO_ARCH_AVR
+gubg = /home/geertf/gubg
+arduino = $gubg/extern/Arduino-master
+core_arduino = $arduino/hardware/arduino/avr/cores/arduino
+variant_mega = $arduino/hardware/arduino/avr/variants/mega
+include_paths = -I $core_arduino -I $variant_mega
+lflags = -w -Os -g -flto -fuse-linker-plugin -Wl,--gc-sections,--relax
+lflags_mega = -mmcu=atmega2560
+uflags_mega = -patmega2560
+uflags_port = -P/dev/ttyACM0 -b115200
+
+rule compile_cpp
+  command = /usr/bin/avr-g++ -c $cflags_cpp $cflags_mega $include_paths $in -o $out
+rule compile_c
+  command = /usr/bin/avr-gcc -c $cflags_c   $cflags_mega $include_paths $in -o $out
+rule compile_asm
+  command = /usr/bin/avr-gcc -c $cflags_asm $cflags_mega $include_paths $in -o $out
+rule archive
+  command = /usr/bin/avr-gcc-ar rcs $out $in
+rule link
+  command = /usr/bin/avr-gcc $lflags $lflags_mega -o $out $in
+rule eep
+  command = /usr/bin/avr-objcopy -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load --no-change-warnings --change-section-lma .eeprom=0 $in $out
+rule hex
+  command = /usr/bin/avr-objcopy -O ihex -R .eeprom  $in $out
+rule upload
+  command = /usr/bin/avrdude -C/etc/avrdude.conf -v $uflags_mega -cwiring $uflags_port -D -Uflash:w:$in:i 
+
+  
+#"-L/tmp/arduino_build_636471" -lm
+
+build .build/main.cpp.o: compile_cpp main.cpp
+
+build .build/core/wiring_pulse.S.o: compile_asm $core_arduino/wiring_pulse.S
+
+build .build/core/WInterrupts.c.o: compile_c $core_arduino/WInterrupts.c
+build .build/core/hooks.c.o: compile_c $core_arduino/hooks.c
+build .build/core/wiring.c.o: compile_c $core_arduino/wiring.c
+build .build/core/wiring_analog.c.o: compile_c $core_arduino/wiring_analog.c
+build .build/core/wiring_digital.c.o: compile_c $core_arduino/wiring_digital.c
+build .build/core/wiring_pulse.c.o: compile_c $core_arduino/wiring_pulse.c
+build .build/core/wiring_shift.c.o: compile_c $core_arduino/wiring_shift.c
+
+build .build/core/CDC.cpp.o: compile_cpp $core_arduino/CDC.cpp
+build .build/core/HardwareSerial.cpp.o: compile_cpp $core_arduino/HardwareSerial.cpp
+build .build/core/HardwareSerial0.cpp.o: compile_cpp $core_arduino/HardwareSerial0.cpp
+build .build/core/HardwareSerial1.cpp.o: compile_cpp $core_arduino/HardwareSerial1.cpp
+build .build/core/HardwareSerial2.cpp.o: compile_cpp $core_arduino/HardwareSerial2.cpp
+build .build/core/HardwareSerial3.cpp.o: compile_cpp $core_arduino/HardwareSerial3.cpp
+build .build/core/IPAddress.cpp.o: compile_cpp $core_arduino/IPAddress.cpp
+build .build/core/PluggableUSB.cpp.o: compile_cpp $core_arduino/PluggableUSB.cpp
+build .build/core/Print.cpp.o: compile_cpp $core_arduino/Print.cpp
+build .build/core/Stream.cpp.o: compile_cpp $core_arduino/Stream.cpp
+build .build/core/Tone.cpp.o: compile_cpp $core_arduino/Tone.cpp
+build .build/core/USBCore.cpp.o: compile_cpp $core_arduino/USBCore.cpp
+build .build/core/WMath.cpp.o: compile_cpp $core_arduino/WMath.cpp
+build .build/core/WString.cpp.o: compile_cpp $core_arduino/WString.cpp
+build .build/core/abi.cpp.o: compile_cpp $core_arduino/abi.cpp
+build .build/core/main.cpp.o: compile_cpp $core_arduino/main.cpp
+build .build/core/new.cpp.o: compile_cpp $core_arduino/new.cpp
+
+build .build/library.a: archive $
+  .build/core/wiring_pulse.S.o $
+  .build/core/WInterrupts.c.o $
+  .build/core/hooks.c.o $
+  .build/core/wiring.c.o $
+  .build/core/wiring_analog.c.o $
+  .build/core/wiring_digital.c.o $
+  .build/core/wiring_pulse.c.o $
+  .build/core/wiring_shift.c.o $
+  .build/core/CDC.cpp.o $
+  .build/core/HardwareSerial.cpp.o $
+  .build/core/HardwareSerial0.cpp.o $
+  .build/core/HardwareSerial1.cpp.o $
+  .build/core/HardwareSerial2.cpp.o $
+  .build/core/HardwareSerial3.cpp.o $
+  .build/core/IPAddress.cpp.o $
+  .build/core/PluggableUSB.cpp.o $
+  .build/core/Print.cpp.o $
+  .build/core/Stream.cpp.o $
+  .build/core/Tone.cpp.o $
+  .build/core/USBCore.cpp.o $
+  .build/core/WMath.cpp.o $
+  .build/core/WString.cpp.o $
+  .build/core/abi.cpp.o $
+  .build/core/main.cpp.o $
+  .build/core/new.cpp.o
+
+build .build/main.elf: link .build/main.cpp.o .build/library.a
+build .build/main.eep: eep .build/main.elf
+build .build/main.hex: hex .build/main.elf
+
+build dia: upload .build/main.hex
