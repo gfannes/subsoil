@@ -1,0 +1,15 @@
+root.book("arduino", fun(b){
+    b.recipe("core", "library", fun(r){
+        auto gubg = "/home/geert/gubg"
+        auto arduino = "${gubg}/extern/Arduino-master"
+        auto core_arduino = "${arduino}/hardware/arduino/avr/cores/arduino"
+        auto variant_mega = "${arduino}/hardware/arduino/avr/variants/mega"
+
+        r.add(core_arduino, "wiring_pulse.S")
+        r.add(core_arduino, "CDC.cpp")
+    })
+})
+root.book("wt6wd", fun(b){
+    b.recipe("app", fun(r){
+    })
+})
