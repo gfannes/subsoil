@@ -44,3 +44,16 @@ task :post do
         end
     end
 end
+
+namespace :wt6wd do
+    desc "Build for arduino"
+    task :build do
+        gubg = ENV["gubg"]
+        sh "cook -t gcc -t wt6wd/avr.chai -T uno -g ninja -o wt6wd/build -f #{gubg}/gubg.arduino -f wt6wd /wt6wd/uno"
+        # sh "ninja -f wt6wd/build/build.ninja -t clean"
+        sh "ninja -f wt6wd/build/build.ninja -v"
+
+# "/usr/bin/avr-objcopy" -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load --no-change-warnings --change-section-lma .eeprom=0  "/tmp/arduino_build_119954/sketch_jan25a.ino.elf" "/tmp/arduino_build_119954/sketch_jan25a.ino.eep"
+# "/usr/bin/avr-objcopy" -O ihex -R .eeprom  "/tmp/arduino_build_119954/sketch_jan25a.ino.elf" "/tmp/arduino_build_119954/sketch_jan25a.ino.hex"
+    end
+end
