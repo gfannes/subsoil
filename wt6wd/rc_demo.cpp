@@ -27,6 +27,10 @@ void rc_read_values() {
 }
 
 void calc_input(uint8_t channel, uint8_t input_pin) {
+    Serial.print("channel: ");
+    Serial.print(channel);
+    Serial.print("input_pin: ");
+    Serial.println(input_pin);
   if (digitalRead(input_pin) == HIGH) {
     rc_start[channel] = micros();
   } else {
