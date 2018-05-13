@@ -48,13 +48,16 @@ end
 namespace :wt6wd do
     desc "Build for arduino"
     task :build do
+        require("arduino")
         gubg_arduino = "#{ENV["gubg"]}/gubg.arduino"
         archs = %w[uno mega lilypad]
+        archs = %w[lilypad]
         archs.each do |arch|
             output_dir = "wt6wd/build/#{arch}"
             sh "cook -t gcc -t #{gubg_arduino}/cook/avr.chai -T #{arch} -g ninja -g naft -o #{output_dir} -f #{gubg_arduino} -f wt6wd /wt6wd/motor"
             # sh "ninja -f #{output_dir}/build.ninja -t clean"
             sh "ninja -f #{output_dir}/build.ninja -v"
+            Arduino.program("#{output_dir}/wt6wd.motor", arch: arch)
         end
 
 # "/usr/bin/avr-objcopy" -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load --no-change-warnings --change-section-lma .eeprom=0  "/tmp/arduino_build_119954/sketch_jan25a.ino.elf" "/tmp/arduino_build_119954/sketch_jan25a.ino.eep"
