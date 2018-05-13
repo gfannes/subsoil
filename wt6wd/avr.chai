@@ -6,7 +6,7 @@ cook.toolchain.configure(2, "Arduino configuration", fun(e,k,v,b) {
     }
 
     if (false) {
-    } else if (k == "uno") {
+    } else if (k == "uno" || k == "lilypad" || k == "mega" || k == "due") {
         b.add_config("arch", k);
     } else {
         return false
@@ -20,21 +20,16 @@ cook.toolchain.configure(100, "Arduino configuration", fun(e,k,v,b) {
     auto & kv = e.key_values();
     auto & tm = e.translators();
 
-
     if (false) {
     } else if (e.type == ElementType.Compile) {
         if (false) {
         } else if (k == "optimization" && v == "max_speed") {
             kv.append(Part.Pre, "-Os")
         } else if (k == "arch" && v == "uno") {
-            print("Arduino uno enabled")
             kv.append(Part.Pre, "-mmcu=atmega328p")
             kv.append(Part.Define, "F_CPU", "16000000L")
             kv.append(Part.Define, "ARDUINO", "10805")
             kv.append(Part.Define, "ARDUINO_AVR_UNO")
-            kv.append(Part.Define, "ARDUINO_ARCH_AVR")
-            kv.append(Part.IncludePath, "/usr/share/arduino/hardware/archlinux-arduino/avr/cores/arduino")
-            kv.append(Part.IncludePath, "/usr/share/arduino/hardware/archlinux-arduino/avr/variants/standard")
         } else if (k == "c++-standard" && e.language == Language.CXX) {
             kv.append(Part.Pre, "-std", "c++${v}")
         } else if (k == "c-standard" && e.language == Language.C) {
@@ -70,7 +65,6 @@ for( s: [[Language.C, "avr-gcc"], [Language.CXX, "avr-g++"], [Language.ASM, "avr
     kv.clear(Part.Cli);
     kv.append(Part.Cli, s[1])
 
-    
     kv.append(Part.Pre, "-ffunction-sections -fdata-sections -flto")
     if (s[0] == Language.C){
         kv.append(Part.Pre, "-fno-fat-lto-objects")
@@ -78,6 +72,8 @@ for( s: [[Language.C, "avr-gcc"], [Language.CXX, "avr-g++"], [Language.ASM, "avr
     if (s[0] == Language.CXX){
         kv.append(Part.Pre, "-fpermissive -fno-exceptions -fno-threadsafe-statics -fno-devirtualize -fno-use-cxa-atexit")
     }
+
+    kv.append(Part.Define, "ARDUINO_ARCH_AVR")
 }
 {
     var compiler = cook.toolchain.element(ElementType.Archive, Language.Binary)
