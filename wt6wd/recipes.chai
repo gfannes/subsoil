@@ -1,6 +1,6 @@
 {
     var mod = cook["wt6wd"]
-    mod.recipe("uno", "executable", fun(r){
+    mod.recipe("motor", "executable", fun(r){
         r.add("", "blinkie.cpp")
         r.depends_on("/arduino/core")
     })
