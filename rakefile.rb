@@ -50,7 +50,7 @@ namespace :wt6wd do
     task :build, :arch do |t,args|
         arch = args[:arch]
         archs = %w[uno mega lilypad]
-        raise("Invalid arch \"#{arch}\"") unless archs.include?(arch)
+        raise("Invalid arch \"#{arch}\", should be one of #{archs*' '}") unless archs.include?(arch)
 
         require("arduino")
         gubg_arduino = "#{ENV["gubg"]}/gubg.arduino"
