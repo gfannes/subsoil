@@ -5,5 +5,6 @@
         /* r.add("", "rc_demo.cpp") */
         r.add("", "main.cpp")
         r.depends_on("/arduino/core")
+        r.depends_on("/arduino/servo")
     })
 }

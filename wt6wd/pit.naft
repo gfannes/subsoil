@@ -1,0 +1,11 @@
+
+[motor]{
+    [pwm on pwm](done)
+    [PPMPin between -1 and 1]
+    [direction based on lrab]
+    [motor encoders or learn model]{
+        [motors need extra boost to get started]
+    }
+    [add arduino power]
+    [maybe trun arduino to allow connection]
+}
