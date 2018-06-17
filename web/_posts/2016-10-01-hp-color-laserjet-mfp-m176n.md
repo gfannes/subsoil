@@ -5,7 +5,7 @@ date: 2016-10-01 00:00:00
 categories: 
 ---
 
-Linux support for this printer is terrible. For Manjaro, the following steps eventually resulted into a functional printer:
+Linux support for this printer/scanner is terrible. For Manjaro, the following steps eventually resulted into a functional printer, with scanner support:
 
 * Install hplip via `sudo pacman -S hplip`
 * Install printer via `sudo hp-setup`, manually specifying the IP address
