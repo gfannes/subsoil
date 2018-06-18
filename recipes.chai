@@ -1,15 +1,21 @@
 include("../gubg")
-add_book("subsoil", fun(b){
-    add_recipe("func", fun(r){
-        r.add_header("src", "**/*.hpp")
-        r.add_source("src", "**/*.cpp")
-        r.depends_on("gubg.func")
+root.book("subsoil", fun(b){
+    b.recipe("func", fun(r){
+        r.add("src", "**/*.hpp")
+        r.add("src", "**/*.cpp")
+        r.depends_on("gubg/func")
     })
 })
-add_book("toolbox", fun(b){
-    add_recipe("exe", fun(r){
-        r.target_type(executable)
-        r.add_source("toolbox/src", "*.cpp")
+root.book("toolbox", fun(b){
+    b.recipe("exe", TargetType.Executable, fun(r){
+        r.add("toolbox/src", "*.cpp")
         r.depends_on("subsoil.func")
+    })
+})
+root.book("fri3d", fun(b){
+    b.recipe("nn", TargetType.Executable, fun(r){
+        r.add("fri3d/2018/src", "nn/*.[hc]pp")
+        r.add("fri3d/2018/src", "nn.cpp")
+        r.depends_on("gubg/func")
     })
 })

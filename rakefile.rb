@@ -63,3 +63,12 @@ namespace :wt6wd do
         Arduino.program("#{output_dir}/wt6wd.motor", arch: arch)
     end
 end
+
+namespace :fri3d do
+    desc "Neural network test app"
+    task :nn do
+        sh "cook -g ninja -T c++.std=17 -f ./ fri3d/nn"
+        sh "ninja -v"
+        sh "./fri3d.nn"
+    end
+end
