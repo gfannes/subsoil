@@ -21,8 +21,6 @@ class IO:
         self.states[self.bias] = 1.0
 
     def imgui(self, ctx):
-        bimpy.show_test_window()
-        return
         bimpy.text("Nr states: {a}, nr weight: {b}".format(a=self.network.nr_states, b=self.network.nr_weights))
         im = self.imstate
         bimpy.slider_float("Input", im.input, -2.0, 2.0)
@@ -32,3 +30,4 @@ class IO:
         self.network.forward(self.states, self.weights)
         im.output.value = self.states[self.output]
         bimpy.slider_float("Output", im.output, -1.0, 1.0)
+        bimpy.plot_lines("Function", [-1.0, 0.5, 0.0, 1.0], 0, "", -1.0, 1.0, bimpy.Vec2(0,100))
