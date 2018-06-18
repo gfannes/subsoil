@@ -64,6 +64,7 @@ public:
 private:
     void update_()
     {
+        mode_.reset();
         switch (item_)
         {
             case 1: mode_.reset(new nn::IO); break;
