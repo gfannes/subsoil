@@ -11,11 +11,19 @@ namespace nn {
     class IO: public Mode
     {
     public:
-        IO()
+        IO(int nr_layers)
         {
             input_ = network_.add_external(1);
             bias_ = network_.add_external(1);
-            network_.add_neuron(gubg::neural::Transfer::Tanh, Inputs{input_, bias_}, output_, weight_);
+            switch (nr_layers)
+            {
+                case 1:
+                    network_.add_neuron(gubg::neural::Transfer::Tanh, Inputs{input_, bias_}, output_, weight_);
+                    break;
+                case 2:
+                    network_.add_neuron(gubg::neural::Transfer::Tanh, Inputs{input_, bias_}, output_, weight_);
+                    break;
+            }
             states_.resize(network_.nr_states());
             states_[bias_] = 1.0;
             weights_.resize(network_.nr_weights());

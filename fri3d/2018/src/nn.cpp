@@ -67,13 +67,14 @@ private:
         mode_.reset();
         switch (item_)
         {
-            case 1: mode_.reset(new nn::IO); break;
+            case 1: mode_.reset(new nn::IO(1)); break;
+            case 2: mode_.reset(new nn::IO(2)); break;
         }
     }
 
     nn::Mode::Ptr mode_;
     int item_ = 1;
-    std::vector<const char *> items_ = {"<mode>", "NN IO"};
+    std::vector<const char *> items_ = {"<mode>", "Single neuron", "Single-layer MLP"};
 };
 
 int main()
