@@ -9,7 +9,7 @@ class App:
             self._add("Perceptron", io.Perceptron)
             self._add("Multi-Layer Perceptron", io.MLP)
 
-            self.ix = bimpy.Int(1)
+            self.ix = bimpy.Int(2)
             self.update()
         def __str__(self):
             return self.names[self.ix.value]
