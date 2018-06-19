@@ -1,5 +1,6 @@
 from gubg.neural.simulator import Simulator
 from gubg.neural.mlp import MLP as gubg_MLP
+from . import model
 import bimpy
 import numpy as np
 
@@ -18,42 +19,28 @@ class Perceptron:
             self.output = bimpy.Float(0.0)
 
     def __init__(self):
-        self.simulator = Simulator()
         self.ui = self.UI()
-
-        self.input = self.simulator.add_external(1)
-        self.bias  = self.simulator.add_external(1)
-        self.output, self.weight = self.simulator.add_neuron("tanh", [self.input, self.bias])
-        self.states = np.zeros(self.simulator.nr_states)
-        self.weights = np.zeros(self.simulator.nr_weights)
-        self.states[self.bias] = 1.0
+        self.model = model.Perceptron()
+        self.model.setup()
 
     def show(self, ctx):
-        bimpy.text("Nr states: {a}, nr weight: {b}".format(a=self.simulator.nr_states, b=self.simulator.nr_weights))
+        bimpy.text(str(self.model))
         ui = self.ui
 
         bimpy.slider_float("Weight", ui.weight, *mm)
-        self.weights[self.weight] = ui.weight.value
-
         bimpy.slider_float("Bias", ui.bias, *mm)
-        self.weights[self.bias] = ui.bias.value
+        self.model.weight = ui.weight.value
+        self.model.bias = ui.bias.value
 
         bimpy.slider_float("Input", ui.input, *mm)
 
-        self._compute_outputs()
-        bimpy.plot_lines("", self.outputs, 0, "", -1.0, 1.0, bimpy.Vec2(0,100))
+        outputs = self.model.compute_outputs([ix2f(ix) for ix in range(NR+1)])
+        bimpy.plot_lines("", outputs, 0, "", -1.0, 1.0, bimpy.Vec2(0,100))
 
         bimpy.same_line()
 
-        ui.output.value = self._compute_output(ui.input.value)
+        ui.output.value = self.model.compute_output(ui.input.value)
         bimpy.v_slider_float("Output", bimpy.Vec2(40,100), ui.output, -1.0, 1.0)
-
-    def _compute_output(self, input):
-        self.states[self.input] = input
-        self.simulator.forward(self.states, self.weights)
-        return self.states[self.output]
-    def _compute_outputs(self):
-        self.outputs = [self._compute_output(ix2f(ix)) for ix in range(NR+1)]
 
 class MLP:
     class UI:
@@ -107,8 +94,7 @@ class MLP:
         bimpy.text(str(self.simulator))
 
         self._compute_outputs()
-        print(self.outputs)
-        bimpy.plot_lines("Function", self.outputs)
+        bimpy.plot_lines("Function", self.outputs, 0, "", -1.0, 1.0, bimpy.Vec2(0,100))
 
     def _compute_output(self, input):
         self.states[self.mlp.input0] = input
