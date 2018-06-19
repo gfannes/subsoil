@@ -18,7 +18,7 @@ class App:
             self.app = None
             if (t is not None):
                 self.app = t()
-        def imgui(self, ctx):
+        def show(self, ctx):
             if (bimpy.collapsing_header("Subapp selection ({str})".format(str=str(self)))):
                 if bimpy.combo("Selected app", self.ix, self.names):
                     self.update()
@@ -27,7 +27,7 @@ class App:
                 if (self.app is None):
                     bimpy.text("This subapp is not supported.")
                     return
-                self.app.imgui(ctx)
+                self.app.show(ctx)
         def _add(self, name, type):
             self.names.append(name)
             self.types.append(type)
@@ -41,7 +41,7 @@ class App:
         while (not ctx.should_close()):
             with ctx:
                 bimpy.begin("Control Center")
-                self.sub.imgui(ctx)
+                self.sub.show(ctx)
                 bimpy.end()
 
 def run():
