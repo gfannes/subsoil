@@ -1,13 +1,7 @@
 from gubg.neural.simulator import Simulator
+from gubg.neural.mlp import MLP as gubg_MLP
 import bimpy
 import numpy as np
-
-class ImState:
-    def __init__(self):
-        self.input = bimpy.Float(0.0)
-        self.weight = bimpy.Float(0.0)
-        self.bias = bimpy.Float(0.0)
-        self.output = bimpy.Float(0.0)
 
 NR = 100
 def ix2f(ix):
@@ -16,9 +10,16 @@ def ix2f(ix):
 mm = (ix2f(0), ix2f(NR-1))
 
 class Perceptron:
+    class ImState:
+        def __init__(self):
+            self.input = bimpy.Float(0.0)
+            self.weight = bimpy.Float(0.0)
+            self.bias = bimpy.Float(0.0)
+            self.output = bimpy.Float(0.0)
+
     def __init__(self):
         self.simulator = Simulator()
-        self.imstate = ImState()
+        self.imstate = self.ImState()
 
         simulator = self.simulator
         self.input = simulator.add_external(1)
@@ -56,5 +57,10 @@ class Perceptron:
         self._outputs = [self._compute_output(ix2f(ix)) for ix in range(NR)]
 
 class MLP:
+    def __init__(self):
+        self.mlp = gubg_MLP(1)
+        self.layer = bimpy.Int(0)
+        self.layer_names = ["abc", "def"]
     def imgui(self, cxt):
-        pass
+        if (bimpy.combo("Layer", self.layer, self.layer_names)):
+            pass
