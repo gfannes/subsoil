@@ -1,33 +1,60 @@
-import gubg.neural
+from gubg.neural.simulator import Simulator
 import bimpy
 import numpy as np
 
 class ImState:
-    input = bimpy.Float(0.0)
-    weight = bimpy.Float(0.0)
-    output = bimpy.Float(0.0)
-
-class IO:
-    network = gubg.neural.Network()
-    imstate = ImState()
-
     def __init__(self):
-        network = self.network
-        self.input = network.add_external(1)
-        self.bias  = network.add_external(1)
-        self.output, self.weight = network.add_neuron("tanh", [self.input, self.bias])
-        self.states = np.zeros(network.nr_states)
-        self.weights = np.zeros(network.nr_weights)
+        self.input = bimpy.Float(0.0)
+        self.weight = bimpy.Float(0.0)
+        self.bias = bimpy.Float(0.0)
+        self.output = bimpy.Float(0.0)
+
+NR = 100
+def ix2f(ix):
+    v = 3.0
+    return (ix/NR*2-1)*v
+mm = (ix2f(0), ix2f(NR-1))
+
+class Perceptron:
+    def __init__(self):
+        self.simulator = Simulator()
+        self.imstate = ImState()
+
+        simulator = self.simulator
+        self.input = simulator.add_external(1)
+        self.bias  = simulator.add_external(1)
+        self.output, self.weight = simulator.add_neuron("tanh", [self.input, self.bias])
+        self.states = np.zeros(simulator.nr_states)
+        self.weights = np.zeros(simulator.nr_weights)
         self.states[self.bias] = 1.0
 
     def imgui(self, ctx):
-        bimpy.text("Nr states: {a}, nr weight: {b}".format(a=self.network.nr_states, b=self.network.nr_weights))
+        bimpy.text("Nr states: {a}, nr weight: {b}".format(a=self.simulator.nr_states, b=self.simulator.nr_weights))
         im = self.imstate
-        bimpy.slider_float("Input", im.input, -2.0, 2.0)
-        bimpy.slider_float("Weight", im.weight, -2.0, 2.0)
-        self.states[self.input] = im.input.value
+
+        bimpy.slider_float("Weight", im.weight, *mm)
         self.weights[self.weight] = im.weight.value
-        self.network.forward(self.states, self.weights)
-        im.output.value = self.states[self.output]
-        bimpy.slider_float("Output", im.output, -1.0, 1.0)
-        bimpy.plot_lines("Function", [-1.0, 0.5, 0.0, 1.0], 0, "", -1.0, 1.0, bimpy.Vec2(0,100))
+
+        bimpy.slider_float("Bias", im.bias, *mm)
+        self.weights[self.bias] = im.bias.value
+
+        bimpy.slider_float("Input", im.input, *mm)
+
+        self._compute_outputs()
+        bimpy.plot_lines("", self._outputs, 0, "", -1.0, 1.0, bimpy.Vec2(0,100))
+
+        bimpy.same_line()
+
+        im.output.value = self._compute_output(im.input.value)
+        bimpy.v_slider_float("Output", bimpy.Vec2(40,100), im.output, -1.0, 1.0)
+
+    def _compute_output(self, input):
+        self.states[self.input] = input
+        self.simulator.forward(self.states, self.weights)
+        return self.states[self.output]
+    def _compute_outputs(self):
+        self._outputs = [self._compute_output(ix2f(ix)) for ix in range(NR)]
+
+class MLP:
+    def imgui(self, cxt):
+        pass

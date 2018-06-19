@@ -2,15 +2,16 @@ import bimpy
 from . import io
 
 class Modes:
-    names = ["<mode>", "IO NN", "Learn NN", "Genetic NN"]
-    classes = [None, io.IO, None, None]
-    ix = bimpy.Int(0)
-    mode = None
+    names = ["<mode>", "Single Perceptron", "Multi-layer Perceptron", "Learn NN", "Genetic NN"]
+    classes = [None, io.Perceptron, io.MLP, None, None]
 
+    def __init__(self):
+        self.ix = bimpy.Int(0)
+        self.mode = None
     def __str__(self):
-        return self.names[self.ix.value]
+        return Modes.names[self.ix.value]
     def update(self):
-        t = self.classes[self.ix.value]
+        t = Modes.classes[self.ix.value]
         self.mode = None
         if (t is not None):
             self.mode = t()
@@ -31,8 +32,8 @@ def run():
     while (not ctx.should_close()):
         with ctx:
             bimpy.begin("Control Center")
-            if (bimpy.collapsing_header("Mode selection")):
-                if bimpy.combo("Selected mode", modes.ix, modes.names):
+            if (bimpy.collapsing_header("Mode selection ({str})".format(str=str(modes)))):
+                if bimpy.combo("Selected mode", modes.ix, Modes.names):
                     modes.update()
                     print("Mode changed to {str}".format(str=str(modes)))
             if (bimpy.collapsing_header("Mode processing")):
