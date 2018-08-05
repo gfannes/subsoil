@@ -1,0 +1,8 @@
+{
+    var mod = cook["boat"]
+    mod.recipe("app", TargetType.Executable, fun(r){
+        r.add("", "boat.cpp")
+        r.depends_on("/arduino/core")
+        r.depends_on("/arduino/servo")
+    })
+}

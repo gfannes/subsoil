@@ -1,6 +1,6 @@
 {
     var mod = cook["wt6wd"]
-    mod.recipe("motor", "executable", fun(r){
+    mod.recipe("motor", TargetType.Executable, fun(r){
         /* r.add("", "blinkie.cpp") */
         /* r.add("", "rc_demo.cpp") */
         r.add("", "main.cpp")
