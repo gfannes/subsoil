@@ -18,4 +18,14 @@ root.book("fri3d", fun(b){
         r.add("fri3d/2018/src", "nn.cpp")
         r.depends_on("gubg/func")
     })
+    b.recipe("boat", TargetType.Executable, fun(r){
+        r.add("fri3d/2018/src", "boat.cpp")
+        r.depends_on("/arduino/core")
+        r.depends_on("/arduino/servo")
+    })
+    b.recipe("prop", TargetType.Executable, fun(r){
+        r.add("fri3d/2018/src", "prop.cpp")
+        r.depends_on("/arduino/core")
+        r.depends_on("/arduino/servo")
+    })
 })

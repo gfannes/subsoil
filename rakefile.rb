@@ -67,24 +67,26 @@ end
 namespace :fri3d do
     desc "Neural network test app"
     task :nn do
-        sh "cook -g ninja -T c++.std=17 -f ./ fri3d/nn"
+        sh "cook -g ninja -T c++.std=17 fri3d/nn"
         sh "ninja -v"
         sh "./fri3d.nn"
     end
-    desc "Flash the boat"
-    task :boat, :arch do |t,args|
-        arch = args[:arch]
-        archs = %w[uno mega lilypad]
-        raise("Invalid arch \"#{arch}\", should be one of #{archs*' '}") unless archs.include?(arch)
+    [:boat, :prop].each do |name|
+        desc "Build and flash the #{name} arduino app"
+        task name, :arch do |t,args|
+            arch = args[:arch]
+            archs = %w[uno mega lilypad]
+            raise("Invalid arch \"#{arch}\", should be one of #{archs*' '}") unless archs.include?(arch)
 
-        require("arduino")
-        gubg_arduino = "#{ENV["gubg"]}/gubg.arduino"
+            require("arduino")
+            gubg_arduino = "#{ENV["gubg"]}/gubg.arduino"
 
-        output_dir = "fri3d/2018/build/#{arch}"
-        sh "cook -t gcc -t #{gubg_arduino}/cook/avr.chai -T #{arch} -g ninja -g naft -o #{output_dir} -f #{gubg_arduino} -f fri3d/2018/boat /boat/app"
-        # sh "ninja -f #{output_dir}/build.ninja -t clean"
-        sh "ninja -f #{output_dir}/build.ninja -v"
+            output_dir = "fri3d/2018/build/#{arch}"
+            sh "cook -t gcc -t #{gubg_arduino}/cook/avr.chai -T #{arch} -g ninja -g naft -o #{output_dir} -f #{gubg_arduino} -f ./ /fri3d/#{name}"
+            # sh "ninja -f #{output_dir}/build.ninja -t clean"
+            sh "ninja -f #{output_dir}/build.ninja -v"
 
-        Arduino.program("#{output_dir}/boat.app", arch: arch)
+            Arduino.program("#{output_dir}/fri3d.#{name}", arch: arch)
+        end
     end
 end
