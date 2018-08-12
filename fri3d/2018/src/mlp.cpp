@@ -1,5 +1,6 @@
 #include "gubg/imgui/SelectFile.hpp"
 #include "gubg/mlp/Structure.hpp"
+#include "gubg/mlp/Parameters.hpp"
 #include "gubg/s11n.hpp"
 #include "gubg/mss.hpp"
 #include "imgui.h"
@@ -7,6 +8,7 @@
 #include "SFML/Graphics.hpp"
 #include "gubg/std/filesystem.hpp"
 #include <iostream>
+#include <sstream>
 #include <optional>
 
 class App
@@ -16,21 +18,69 @@ public:
     {
         MSS_BEGIN(bool);
         /* ImGui::ShowDemoWindow(); */
+
+        messages_.resize(0);
+
+        if (!error_.empty())
+            ImGui::Text(error_.c_str());
+
         if (gubg::imgui::select_file("MLP structure", structure_fn_))
         {
             std::cout << "Selected structure file " << structure_fn_ << std::endl;
-            structure_.emplace();
-            structure_error_.clear();
-            if (!gubg::s11n::read_object_from_file(structure_fn_, ":mlp.Structure", *structure_))
-            {
-                structure_error_ = "Error: Could not read MLP structure from " + structure_fn_.string();
-                structure_.reset();
-            }
+            info_.reset();
+            error_.clear();
+            gubg::mlp::Structure structure;
+            MSS(gubg::s11n::read_object_from_file(structure_fn_, ":mlp.Structure", structure), error_ = "Error: Could not read MLP structure from " + structure_fn_.string());
+            info_.emplace();
+            info_->structure = structure;
+            info_->parameters.setup_from(info_->structure);
         }
         ImGui::SameLine();
         ImGui::Text(structure_fn_.c_str());
-        if (!structure_error_.empty())
-            ImGui::Text(structure_error_.c_str());
+
+        if (info_)
+        {
+            auto &info = *info_;
+            if (ImGui::BeginCombo("layers", cstr_("Layer ", info.lix)))
+            {
+                const auto &s = info.structure;
+                for (auto lix = 0u; lix < s.layers.size(); ++lix)
+                    if (ImGui::Selectable(cstr_("Layer ", lix), lix == info.lix))
+                    {
+                        info.lix = lix;
+                        info.nix = 0;
+                    }
+                ImGui::EndCombo();
+            }
+            if (ImGui::BeginCombo("neurons", cstr_("Neuron ", info.nix)))
+            {
+                const auto &s = info.structure;
+                for (auto nix = 0u; nix < s.layers[info.lix].neurons.size(); ++nix)
+                    if (ImGui::Selectable(cstr_("Neuron ", nix), nix == info.nix))
+                        info.nix = nix;
+                ImGui::EndCombo();
+            }
+
+            {
+                const auto &neuron = info.structure.layers[info.lix].neurons[info.nix];
+                ImGui::Text("Transfer function: %s", to_str(neuron.transfer));
+            }
+            {
+                auto &neuron =  info.parameters.layers[info.lix].neurons[info.nix];
+                for (auto wix = 0u; wix < neuron.weights.size(); ++wix)
+                {
+                    float weight = neuron.weights[wix];
+                    ImGui::SliderFloat(cstr_("Weight ", wix), &weight, -3.0, 3.0);
+                    neuron.weights[wix] = weight;
+                }
+                {
+                    float bias = neuron.bias;
+                    ImGui::SliderFloat(cstr_("Bias"), &bias, -3.0, 3.0);
+                    neuron.bias = bias;
+                }
+            }
+        }
+
         MSS_END();
     }
 
@@ -72,9 +122,32 @@ public:
         ImGui::SFML::Shutdown();
     }
 private:
+    std::vector<std::string> messages_;
+    std::ostringstream oss_;
+    const char *cstr_(const std::string &prefix)
+    {
+        oss_.str(""); oss_ << prefix;
+        messages_.emplace_back(oss_.str());
+        return messages_.back().c_str();
+    }
+    const char *cstr_(const std::string &prefix, unsigned int ix)
+    {
+        oss_.str(""); oss_ << prefix << ix;
+        messages_.emplace_back(oss_.str());
+        return messages_.back().c_str();
+    }
+
+    std::string error_;
+
     std::filesystem::path structure_fn_;
-    std::string structure_error_;
-    std::optional<gubg::mlp::Structure> structure_;
+    struct Info
+    {
+        gubg::mlp::Structure structure;
+        gubg::mlp::Parameters parameters;
+        unsigned int lix = 0;
+        unsigned int nix = 0;
+    };
+    std::optional<Info> info_;
 };
 
 int main()

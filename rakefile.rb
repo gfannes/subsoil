@@ -77,6 +77,12 @@ namespace :fri3d do
         sh "ninja -v"
         sh "./fri3d.mlp"
     end
+    desc "Create MLPs"
+    task :create_mlps do
+        sh "cook -g ninja -T c++.std=17 fri3d/create_mlps"
+        sh "ninja -v"
+        sh "./fri3d.create_mlps"
+    end
     [:boat, :prop].each do |name|
         desc "Build and flash the #{name} arduino app"
         task name, :arch do |t,args|

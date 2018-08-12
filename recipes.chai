@@ -23,6 +23,10 @@ root.book("fri3d", fun(b){
         r.add("fri3d/2018/src", "mlp.cpp")
         r.depends_on("gubg/func")
     })
+    b.recipe("create_mlps", TargetType.Executable, fun(r){
+        r.add("fri3d/2018/src", "create_mlps.cpp")
+        r.depends_on("gubg/func")
+    })
     b.recipe("boat", TargetType.Executable, fun(r){
         r.add("fri3d/2018/src", "boat.cpp")
         r.depends_on("/arduino/core")
