@@ -86,9 +86,14 @@ public:
 
     void run()
     {
-        sf::RenderWindow window(sf::VideoMode(1600, 800), "");
+        const bool is_hires = sf::VideoMode::getDesktopMode().width >= 3000;
+
+        const auto vm = (is_hires ? sf::VideoMode(3000, 1500) : sf::VideoMode(1600, 800));
+        sf::RenderWindow window(vm, "");
         window.setVerticalSyncEnabled(true);
         ImGui::SFML::Init(window);
+        if (is_hires)
+            ImGui::GetIO().FontGlobalScale = 2.0;
 
         window.resetGLStates(); // call it if you only draw ImGui. Otherwise not needed.
 
@@ -114,7 +119,10 @@ public:
                 ImGui::End();
             }
 
-            window.clear();
+            const auto bg_color = (info_ ? sf::Color(0, 128, 128) : sf::Color(0, 0, 0));
+            window.clear(bg_color);
+            sf::CircleShape n(50);
+            window.draw(n);
             ImGui::SFML::Render(window);
             window.display();
         }
