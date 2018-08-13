@@ -7,9 +7,9 @@
 #include "imgui-SFML.h"
 #include "SFML/Graphics.hpp"
 #include "gubg/std/filesystem.hpp"
+#include "gubg/std/optional.hpp"
 #include <iostream>
 #include <sstream>
-#include <optional>
 #include <list>
 #include <vector>
 #include <cmath>
@@ -83,7 +83,7 @@ public:
             info_->parameters.setup_from(info_->structure);
         }
         ImGui::SameLine();
-        ImGui::Text(structure_fn_.c_str());
+        ImGui::Text(structure_fn_.string().c_str());
 
         if (info_)
         {
@@ -261,7 +261,7 @@ private:
                 text.setString(caption);
                 text.setCharacterSize(24);
             }
-            sprite.setPosition(sf::Vector2(xpos, ypos));
+            sprite.setPosition(sf::Vector2f(xpos, ypos));
             sprite.setScale(1.0, -1.0);
             rt.create(width, height);
         }

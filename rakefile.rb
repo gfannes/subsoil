@@ -64,24 +64,28 @@ namespace :wt6wd do
     end
 end
 
+def cooker()
+    require("gubg/shared")
+    require("gubg/build/Cooker")
+    c = GUBG::Build::Cooker.new
+    case GUBG::os
+    when :windows then c.option("c++.std", 14)
+    else c.option("c++.std", 17) end
+    c
+end
+
 namespace :fri3d do
     desc "Neural network test app"
     task :nn do
-        sh "cook -g ninja -T c++.std=17 fri3d/nn"
-        sh "ninja -v"
-        sh "./fri3d.nn"
+        cooker().generate(:ninja, "fri3d/nn").ninja().run()
     end
     desc "MLP test app"
     task :mlp do
-        sh "cook -g ninja -T c++.std=17 fri3d/mlp"
-        sh "ninja -v"
-        sh "./fri3d.mlp"
+        cooker().generate(:ninja, "fri3d/mlp").ninja().run()
     end
     desc "Create MLPs"
     task :create_mlps do
-        sh "cook -g ninja -T c++.std=17 fri3d/create_mlps"
-        sh "ninja -v"
-        sh "./fri3d.create_mlps"
+        cooker().generate(:ninja, "fri3d/create_mlps").ninja().run()
     end
     [:boat, :prop].each do |name|
         desc "Build and flash the #{name} arduino app"
