@@ -14,37 +14,52 @@
 #include <vector>
 #include <cmath>
 
+class Linear
+{
+public:
+    Linear(float from, float to): b_(to/2), a_(b_/from) {}
+    float operator()(float v) const {return a_*v+b_;}
+private:
+    float b_;
+    float a_;
+};
+
+class Transform
+{
+public:
+    template <typename Window>
+    Transform(const Window &wnd, float x, float y): x_(x, wnd.getSize().x), y_(y, wnd.getSize().y) {}
+    sf::Vector2f operator()(float x, float y) const {return sf::Vector2f(x_(x), y_(y));}
+private:
+    Linear x_, y_;
+};
+
 class Line
 {
 public:
     Line(float width, sf::Color color): width_(width), color_(color) {}
 
-    void point(float x, float y)
+    Line &point(const sf::Vector2f &pos)
     {
-        S("");
-        L(C(x)C(y));
-        auto cur = sf::Vector2f(x, y);
+        auto cur = pos;
         if (prev_)
         {
             const auto &prev = *prev_;
             auto diff = cur - prev;
-            auto norm = sf::Vector2f(diff.y, diff.x);
+            auto norm = sf::Vector2f(-diff.y, diff.x);
             norm *= width_/std::sqrt(norm.x*norm.x + norm.y*norm.y);
-            if (vertices_.empty())
-            {
-                vertices_.push_back(sf::Vertex(prev+norm, color_));
-                vertices_.push_back(sf::Vertex(prev-norm, color_));
-            }
+            vertices_.push_back(sf::Vertex(prev+norm, color_));
+            vertices_.push_back(sf::Vertex(prev-norm, color_));
             vertices_.push_back(sf::Vertex(cur+norm, color_));
             vertices_.push_back(sf::Vertex(cur-norm, color_));
         }
         prev_ = cur;
+        return *this;
     }
 
     template <typename Window>
-    void draw(Window &wnd)
+    void draw(Window &wnd) const
     {
-        std::cout << vertices_.size() << std::endl;
         wnd.draw(vertices_.data(), vertices_.size(), sf::TriangleStrip);
     }
 
@@ -185,15 +200,10 @@ public:
                 imgui();
                 nn_.goc();
                 {
-                    io_.lines.emplace_back(1, sf::Color::Red);
-                    auto &line = io_.lines.back();
-                    line.point(-1, -1);
-                    line.point(1, 1);
                     auto &wnd = io_.goc();
-                    sf::View view;
-                    view.setCenter(400, 400);
-                    wnd.setView(view);
-                    line.draw(wnd);
+                    Transform t(wnd, 3,1);
+                    io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(-3.0,0.0)).point(t(3.0,0.0)); });
+                    io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(0.0,-1.0)).point(t(0.0,1.0)); });
                 }
 
                 ImGui::End();
@@ -272,8 +282,16 @@ private:
             rt.draw(text);
             return rt;
         }
+        template <typename Ftor>
+        void line(float width, const sf::Color &color, Ftor &&ftor)
+        {
+            lines.emplace_back(width, color);
+            ftor(lines.back());
+        }
         void draw(sf::RenderWindow &wnd)
         {
+            for (const auto &line: lines)
+                line.draw(rt);
             sprite.setTexture(rt.getTexture());
             wnd.draw(sprite);
             valid = false;
