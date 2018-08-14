@@ -3,6 +3,7 @@
 #include "gubg/mlp/Parameters.hpp"
 #include "gubg/neural/Simulator.hpp"
 #include "gubg/neural/setup.hpp"
+#include "gubg/neural/Trainer.hpp"
 #include "gubg/data/Set.hpp"
 #include "gubg/s11n.hpp"
 #include "gubg/mss.hpp"
@@ -115,6 +116,8 @@ public:
         if (gubg::imgui::select_file("MLP structure", structure_fn_))
         {
             std::cout << "Selected structure file " << structure_fn_ << std::endl;
+            if (learn_)
+                learn_->trainer.reset();
             model_.reset();
             error_.str("");
             gubg::mlp::Structure structure;
@@ -139,6 +142,12 @@ public:
                     model.simulator.reset();
                 }
             }
+            {
+                model.weights_stddev = std::max(model.weights_stddev, 0.1);
+                float weights_stddev = model.weights_stddev;
+                if (ImGui::SliderFloat("Weights stddev", &weights_stddev, 0.1, 10.0))
+                    model.weights_stddev = weights_stddev;
+            }
 
             if (!model.simulator)
                 model.simulator.emplace();
@@ -147,12 +156,12 @@ public:
 
             //Create the simulator, weights and states
             {
-                gubg::neural::setup(simulator, model.structure, model.input, model.bias, model.output);
+                MSS(gubg::neural::setup(simulator, model.structure, model.input, model.bias, model.output));
                 const auto nr_outputs = model.structure.nr_outputs();
                 model.wanted_output = simulator.add_external(nr_outputs);
                 std::vector<size_t> wanted_outputs(nr_outputs); std::iota(RANGE(wanted_outputs), model.wanted_output);
                 std::vector<size_t> actual_outputs(nr_outputs); std::iota(RANGE(actual_outputs), model.output);
-                simulator.add_loglikelihood(wanted_outputs, actual_outputs, model.loglikelihood, model.cost_stddev);
+                MSS(simulator.add_loglikelihood(wanted_outputs, actual_outputs, model.loglikelihood, model.cost_stddev));
                 model.weights.resize(simulator.nr_weights());
                 model.states.resize(simulator.nr_states());
                 model.states[model.bias] = 1.0;
@@ -176,19 +185,10 @@ public:
                         }
                         ImGui::SameLine();
                     }
-                    ImGui::NewLine();
-                    {
-                        float stddev = std::max(layer.neurons.front().weight_stddev, 0.1);
-                        ImGui::SliderFloat(cstr_("L", lix, " stddev weight"), &stddev, 0.1, 10.0);
-                        for (auto &n: layer.neurons)
-                            n.weight_stddev = stddev;
-                    }
-                    {
-                        float stddev = std::max(layer.neurons.front().bias_stddev, 0.1);
-                        ImGui::SliderFloat(cstr_("L", lix, " stddev bias"), &stddev, 0.1, 10.0);
-                        for (auto &n: layer.neurons)
-                            n.bias_stddev = stddev;
-                    }
+                    for (auto &n: layer.neurons)
+                        n.weight_stddev = model.weights_stddev;
+                    for (auto &n: layer.neurons)
+                        n.bias_stddev = model.weights_stddev;
                     ImGui::Separator();
                 }
             }
@@ -220,7 +220,7 @@ public:
                 Transform t(wnd, 3,1);
                 io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(-3.0,0.0)).point(t(3.0,0.0)); });
                 io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(0.0,-1.0)).point(t(0.0,1.0)); });
-                gubg::neural::setup(model.weights, model.parameters);
+                MSS(gubg::neural::setup(model.weights, model.parameters));
                 auto draw_io = [&](auto &line){
                     for (auto x = -3.0; x <= 3.0; x += 0.01)
                     {
@@ -310,6 +310,32 @@ public:
                 if (ImGui::Button("reset cost"))
                     std::fill(RANGE(costs), costs.back());
             }
+            ImGui::Separator();
+
+            if (!learn.trainer)
+                learn.trainer.emplace(model.structure.nr_inputs, model.structure.nr_outputs());
+            {
+                auto &trainer = *learn.trainer;
+                for (const auto &r: learn.data.records)
+                {
+                    MSS(trainer.add(r.fields[0], r.fields[1]));
+                }
+                MSS(trainer.set(&model.simulator.value(), model.input, model.output));
+                trainer.add_fixed_input(model.bias, 1.0);
+
+                ImGui::SliderInt("Nr steps", &learn.nr_steps, 0, 10);
+
+                learn.step = std::max(learn.step, 0.0001f);
+                ImGui::SliderFloat("Steepest descent step", &learn.step, 0.0001, 1.0);
+
+                double newlp;
+                for (int i = 0; i < learn.nr_steps; ++i)
+                {
+                    MSS(trainer.train_sd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.step));
+                }
+                ImGui::Text("New LP: %f", (float)newlp);
+                MSS(gubg::neural::copy_weights(model.parameters, model.weights));
+            }
         }
 
         MSS_END();
@@ -361,7 +387,8 @@ public:
             {
                 ImGui::Begin("Neural Network: Multi-Layer Perceptron");
 
-                imgui();
+                if (!imgui())
+                    window.close();
 
                 ImGui::End();
             }
@@ -422,6 +449,7 @@ private:
         std::optional<gubg::neural::Simulator<float>> simulator;
         size_t input, bias, output;
         std::vector<float> weights, states;
+        double weights_stddev = 3.0;
         double cost_stddev = 1.0;
         size_t wanted_output, loglikelihood;
     };
@@ -432,6 +460,9 @@ private:
     {
         Data data;
         std::array<float, 1000> costs{};
+        std::optional<gubg::neural::Trainer<float>> trainer;
+        int nr_steps = 0;
+        float step = 0.01;
     };
     std::optional<Learn> learn_;
 
