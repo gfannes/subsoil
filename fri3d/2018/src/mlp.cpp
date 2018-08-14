@@ -3,6 +3,7 @@
 #include "gubg/mlp/Parameters.hpp"
 #include "gubg/neural/Simulator.hpp"
 #include "gubg/neural/setup.hpp"
+#include "gubg/data/Set.hpp"
 #include "gubg/s11n.hpp"
 #include "gubg/mss.hpp"
 #include "imgui.h"
@@ -72,6 +73,28 @@ private:
     std::vector<sf::Vertex> vertices_;
 };
 
+class Dot
+{
+public:
+    Dot(float width, sf::Color color, sf::Vector2f pos)
+    {
+        pos.x += width; pos.y += width;     vertices_[0] = sf::Vertex(pos, color);
+        pos.x -= 2*width;                   vertices_[1] = sf::Vertex(pos, color);
+        pos.x += 2*width; pos.y -= 2*width; vertices_[2] = sf::Vertex(pos, color);
+        pos.x -= 2*width;                   vertices_[3] = sf::Vertex(pos, color);
+    }
+
+    template <typename Window>
+    void draw(Window &wnd) const
+    {
+        wnd.draw(vertices_.data(), vertices_.size(), sf::TriangleStrip);
+    }
+private:
+    std::array<sf::Vertex, 4> vertices_;
+};
+
+using Data = gubg::data::Set<double>;
+
 class App
 {
 public:
@@ -91,50 +114,51 @@ public:
         if (gubg::imgui::select_file("MLP structure", structure_fn_))
         {
             std::cout << "Selected structure file " << structure_fn_ << std::endl;
-            info_.reset();
+            model_.reset();
             error_.str("");
             gubg::mlp::Structure structure;
             MSS(gubg::s11n::read_object_from_file(structure_fn_, ":mlp.Structure", structure), error_ << "Could not read MLP structure from " << structure_fn_.string());
-            info_.emplace();
-            info_->structure = structure;
-            info_->parameters.setup_from(info_->structure);
-            gubg::neural::setup(info_->simulator, info_->structure, info_->first_input, info_->bias, info_->first_output);
-            info_->weights.resize(info_->simulator.nr_weights());
-            info_->states.resize(info_->simulator.nr_states());
-            info_->states[info_->bias] = 1.0;
+            model_.emplace();
+            model_->structure = structure;
+            model_->parameters.setup_from(model_->structure);
+            gubg::neural::setup(model_->simulator, model_->structure, model_->first_input, model_->bias, model_->first_output);
+            model_->weights.resize(model_->simulator.nr_weights());
+            model_->states.resize(model_->simulator.nr_states());
+            model_->states[model_->bias] = 1.0;
         }
         ImGui::SameLine();
         ImGui::Text(structure_fn_.string().c_str());
 
-        if (info_)
+        if (model_)
         {
-            auto &info = *info_;
-            if (ImGui::BeginCombo("layers", cstr_("Layer ", info.lix)))
+            auto &model = *model_;
+            ImGui::Text("Nr states: %d, nr weights: %d", model.simulator.nr_states(), model.simulator.nr_weights());
+            if (ImGui::BeginCombo("layers", cstr_("Layer ", model.lix)))
             {
-                const auto &s = info.structure;
+                const auto &s = model.structure;
                 for (auto lix = 0u; lix < s.layers.size(); ++lix)
-                    if (ImGui::Selectable(cstr_("Layer ", lix), lix == info.lix))
+                    if (ImGui::Selectable(cstr_("Layer ", lix), lix == model.lix))
                     {
-                        info.lix = lix;
-                        info.nix = 0;
+                        model.lix = lix;
+                        model.nix = 0;
                     }
                 ImGui::EndCombo();
             }
-            if (ImGui::BeginCombo("neurons", cstr_("Neuron ", info.nix)))
+            if (ImGui::BeginCombo("neurons", cstr_("Neuron ", model.nix)))
             {
-                const auto &s = info.structure;
-                for (auto nix = 0u; nix < s.layers[info.lix].neurons.size(); ++nix)
-                    if (ImGui::Selectable(cstr_("Neuron ", nix), nix == info.nix))
-                        info.nix = nix;
+                const auto &s = model.structure;
+                for (auto nix = 0u; nix < s.layers[model.lix].neurons.size(); ++nix)
+                    if (ImGui::Selectable(cstr_("Neuron ", nix), nix == model.nix))
+                        model.nix = nix;
                 ImGui::EndCombo();
             }
 
             {
-                const auto &neuron = info.structure.layers[info.lix].neurons[info.nix];
+                const auto &neuron = model.structure.layers[model.lix].neurons[model.nix];
                 ImGui::Text("Transfer function: %s", to_str(neuron.transfer));
             }
             {
-                auto &neuron =  info.parameters.layers[info.lix].neurons[info.nix];
+                auto &neuron =  model.parameters.layers[model.lix].neurons[model.nix];
                 for (auto wix = 0u; wix < neuron.weights.size(); ++wix)
                 {
                     float weight = neuron.weights[wix];
@@ -154,17 +178,47 @@ public:
                 Transform t(wnd, 3,1);
                 io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(-3.0,0.0)).point(t(3.0,0.0)); });
                 io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(0.0,-1.0)).point(t(0.0,1.0)); });
-                gubg::neural::setup(info.weights, info.parameters);
+                gubg::neural::setup(model.weights, model.parameters);
                 auto draw_io = [&](auto &line){
                     for (auto x = -3.0; x <= 3.0; x += 0.01)
                     {
-                        info.states[info.first_input] = x;
-                        info.simulator.forward(info.states.data(), info.weights.data());
-                        const auto y = info.states[info.first_output];
+                        model.states[model.first_input] = x;
+                        model.simulator.forward(model.states.data(), model.weights.data());
+                        const auto y = model.states[model.first_output];
                         line.point(t(x, y));
                     }
                 };
                 io_.line(1, sf::Color::Red, draw_io);
+            }
+        }
+
+        if (gubg::imgui::select_file("Data", data_fn_))
+        {
+            std::cout << "Selected data file " << data_fn_ << std::endl;
+            learn_.reset();
+            error_.str("");
+            Data data;
+            MSS(gubg::s11n::read_object_from_file(data_fn_, ":data.Set", data), error_ << "Could not read data from " << data_fn_.string());
+            learn_.emplace();
+            learn_->data = data;
+        }
+        ImGui::SameLine();
+        ImGui::Text(data_fn_.string().c_str());
+
+        if (learn_)
+        {
+            auto &learn = *learn_;
+            ImGui::Text("Nr records: %d", learn.data.records.size());
+
+            {
+                auto &wnd = io_.goc();
+                Transform t(wnd, 3,1);
+                for (const auto &r: learn.data.records)
+                {
+                    const auto x = r.data(0);
+                    const auto y = r.data(1);
+                    io_.dot(3, sf::Color::Green, t(x,y));
+                }
             }
         }
 
@@ -222,7 +276,7 @@ public:
                 ImGui::End();
             }
 
-            const auto bg_color = (info_ ? sf::Color(0, 128, 128) : sf::Color(0, 0, 0));
+            const auto bg_color = (model_ ? sf::Color(0, 128, 128) : sf::Color(0, 0, 0));
             window.clear(bg_color);
             if (nn_.valid)
                 nn_.draw(window);
@@ -253,7 +307,7 @@ private:
     std::ostringstream error_;
 
     std::filesystem::path structure_fn_;
-    struct Info
+    struct Model
     {
         gubg::mlp::Structure structure;
         gubg::mlp::Parameters parameters;
@@ -263,7 +317,14 @@ private:
         size_t first_input, bias, first_output;
         std::vector<float> weights, states;
     };
-    std::optional<Info> info_;
+    std::optional<Model> model_;
+
+    std::filesystem::path data_fn_;
+    struct Learn
+    {
+        Data data;
+    };
+    std::optional<Learn> learn_;
 
     struct Pane
     {
@@ -275,6 +336,7 @@ private:
         sf::RenderTexture rt;
         sf::Sprite sprite;
         std::list<Line> lines;
+        std::list<Dot> dots;
         void setup(const std::string &caption, unsigned int width, unsigned int height, float xpos, sf::Color color, const std::optional<sf::Font> &font)
         {
             this->caption = caption;
@@ -287,15 +349,18 @@ private:
                 text.setString(caption);
                 text.setCharacterSize(24);
             }
-            sprite.setPosition(sf::Vector2f(xpos, ypos));
-            sprite.setScale(1.0, -1.0);
             rt.create(width, height);
         }
         sf::RenderTexture &goc()
         {
-            valid = true;
-            rt.clear(color);
-            rt.draw(text);
+            if (!valid)
+            {
+                valid = true;
+                rt.clear(color);
+                rt.draw(text);
+                lines.clear();
+                dots.clear();
+            }
             return rt;
         }
         template <typename Ftor>
@@ -304,10 +369,18 @@ private:
             lines.emplace_back(width, color);
             ftor(lines.back());
         }
+        void dot(float width, const sf::Color &color, const sf::Vector2f &pos)
+        {
+            dots.emplace_back(width, color, pos);
+        }
         void draw(sf::RenderWindow &wnd)
         {
             for (const auto &line: lines)
                 line.draw(rt);
+            for (const auto &dot: dots)
+                dot.draw(rt);
+            sprite.setPosition(sf::Vector2f(xpos, ypos));
+            sprite.setScale(1.0, -1.0);
             sprite.setTexture(rt.getTexture());
             wnd.draw(sprite);
             valid = false;
