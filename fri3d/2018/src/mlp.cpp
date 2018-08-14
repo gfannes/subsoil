@@ -18,23 +18,26 @@
 #include <vector>
 #include <deque>
 #include <cmath>
+#include <random>
+
+std::mt19937 rng;
 
 class Linear
 {
 public:
-    Linear(float from, float to): b_(to/2), a_(b_/from) {}
-    float operator()(float v) const {return a_*v+b_;}
+    Linear(double from, double to): b_(to/2), a_(b_/from) {}
+    double operator()(double v) const {return a_*v+b_;}
 private:
-    float b_;
-    float a_;
+    double b_;
+    double a_;
 };
 
 class Transform
 {
 public:
     template <typename Window>
-    Transform(const Window &wnd, float x, float y): x_(x, wnd.getSize().x), y_(y, wnd.getSize().y) {}
-    sf::Vector2f operator()(float x, float y) const {return sf::Vector2f(x_(x), y_(y));}
+    Transform(const Window &wnd, double x, double y): x_(x, wnd.getSize().x), y_(y, wnd.getSize().y) {}
+    sf::Vector2f operator()(double x, double y) const {return sf::Vector2f(x_(x), y_(y));}
 private:
     Linear x_, y_;
 };
@@ -42,7 +45,7 @@ private:
 class Line
 {
 public:
-    Line(float width, sf::Color color): width_(width), color_(color) {}
+    Line(double width, sf::Color color): width_(width), color_(color) {}
 
     Line &point(const sf::Vector2f &pos)
     {
@@ -52,7 +55,7 @@ public:
             const auto &prev = *prev_;
             auto diff = cur - prev;
             auto norm = sf::Vector2f(-diff.y, diff.x);
-            norm *= width_/std::sqrt(norm.x*norm.x + norm.y*norm.y);
+            norm *= (float)width_/std::sqrt(norm.x*norm.x + norm.y*norm.y);
             vertices_.push_back(sf::Vertex(prev+norm, color_));
             vertices_.push_back(sf::Vertex(prev-norm, color_));
             vertices_.push_back(sf::Vertex(cur+norm, color_));
@@ -69,7 +72,7 @@ public:
     }
 
 private:
-    float width_;
+    double width_;
     sf::Color color_;
     std::optional<sf::Vector2f> prev_;
     std::vector<sf::Vertex> vertices_;
@@ -78,7 +81,7 @@ private:
 class Dot
 {
 public:
-    Dot(float width, sf::Color color, sf::Vector2f pos)
+    Dot(double width, sf::Color color, sf::Vector2f pos)
     {
         pos.x += width; pos.y += width;     vertices_[0] = sf::Vertex(pos, color);
         pos.x -= 2*width;                   vertices_[1] = sf::Vertex(pos, color);
@@ -136,7 +139,7 @@ public:
             {
                 model.cost_stddev = std::max(model.cost_stddev, 0.1);
                 float cost_stddev = model.cost_stddev;
-                if (ImGui::SliderFloat("Cost stddev", &cost_stddev, 0.1, 10.0))
+                if (ImGui::SliderFloat("Cost stddev", &cost_stddev, 0.01, 1.0))
                 {
                     model.cost_stddev = cost_stddev;
                     model.simulator.reset();
@@ -170,6 +173,19 @@ public:
             ImGui::Text("Nr states: %d, nr weights: %d", simulator.nr_states(), simulator.nr_weights());
             ImGui::Separator();
 
+            if (ImGui::Button("Randomize weights"))
+            {
+                std::normal_distribution<double> gaussian(0.0, model.weights_stddev);
+                for (auto &l: model.parameters.layers)
+                    for (auto &n: l.neurons)
+                    {
+                        for (auto &w: n.weights)
+                            w = gaussian(rng);
+                        n.bias = gaussian(rng);
+                    }
+            }
+            ImGui::Separator();
+
             {
                 auto &s = model.structure;
                 for (auto lix = 0u; lix < s.layers.size(); ++lix)
@@ -189,6 +205,7 @@ public:
                         n.weight_stddev = model.weights_stddev;
                     for (auto &n: layer.neurons)
                         n.bias_stddev = model.weights_stddev;
+                    ImGui::NewLine();
                     ImGui::Separator();
                 }
             }
@@ -268,7 +285,7 @@ public:
         {
             auto &model = *model_;
             auto &learn = *learn_;
-            float data_ll = 0.0;
+            double data_ll = 0.0;
             for (const auto &r: learn.data.records)
             {
                 const auto x = r.data(0);
@@ -278,8 +295,9 @@ public:
                 model.simulator->forward(model.states.data(), model.weights.data());
                 data_ll += model.states[model.loglikelihood];
             }
-            ImGui::Text("data cost: %f", -data_ll);
-            float weights_ll = 0.0;
+            data_ll /= learn.data.records.size();
+            ImGui::Text("data cost: %f", (float)-data_ll);
+            double weights_ll = 0.0;
             for (auto lix = 0u; lix < model.structure.layers.size(); ++lix)
             {
                 for (auto nix = 0u; nix < model.structure.layers[lix].neurons.size(); ++nix)
@@ -296,8 +314,8 @@ public:
                     }
                 }
             }
-            ImGui::Text("weight cost: %f", -weights_ll);
-            ImGui::Text("total cost: %f", -data_ll-weights_ll);
+            ImGui::Text("weight cost: %f", (float)-weights_ll);
+            ImGui::Text("total cost: %f", (float)(-data_ll-weights_ll));
             {
                 auto &costs = learn.costs;
                 for (auto ix = 1u; ix < costs.size(); ++ix)
@@ -331,7 +349,7 @@ public:
                 double newlp;
                 for (int i = 0; i < learn.nr_steps; ++i)
                 {
-                    MSS(trainer.train_sd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.step));
+                    MSS(trainer.train_sd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.step, 10.0));
                 }
                 ImGui::Text("New LP: %f", (float)newlp);
                 MSS(gubg::neural::copy_weights(model.parameters, model.weights));
@@ -446,9 +464,9 @@ private:
         gubg::mlp::Parameters parameters;
         unsigned int lix = 0;
         unsigned int nix = 0;
-        std::optional<gubg::neural::Simulator<float>> simulator;
+        std::optional<gubg::neural::Simulator<double>> simulator;
         size_t input, bias, output;
-        std::vector<float> weights, states;
+        std::vector<double> weights, states;
         double weights_stddev = 3.0;
         double cost_stddev = 1.0;
         size_t wanted_output, loglikelihood;
@@ -460,7 +478,7 @@ private:
     {
         Data data;
         std::array<float, 1000> costs{};
-        std::optional<gubg::neural::Trainer<float>> trainer;
+        std::optional<gubg::neural::Trainer<double>> trainer;
         int nr_steps = 0;
         float step = 0.01;
     };
@@ -471,13 +489,13 @@ private:
         bool valid = false;
         sf::Color color;
         std::string caption;
-        float xpos, ypos;
+        double xpos, ypos;
         sf::Text text;
         sf::RenderTexture rt;
         sf::Sprite sprite;
         std::list<Line> lines;
         std::list<Dot> dots;
-        void setup(const std::string &caption, unsigned int width, unsigned int height, float xpos, sf::Color color, const std::optional<sf::Font> &font)
+        void setup(const std::string &caption, unsigned int width, unsigned int height, double xpos, sf::Color color, const std::optional<sf::Font> &font)
         {
             this->caption = caption;
             this->color = color;
@@ -504,12 +522,12 @@ private:
             return rt;
         }
         template <typename Ftor>
-        void line(float width, const sf::Color &color, Ftor &&ftor)
+        void line(double width, const sf::Color &color, Ftor &&ftor)
         {
             lines.emplace_back(width, color);
             ftor(lines.back());
         }
-        void dot(float width, const sf::Color &color, const sf::Vector2f &pos)
+        void dot(double width, const sf::Color &color, const sf::Vector2f &pos)
         {
             dots.emplace_back(width, color, pos);
         }

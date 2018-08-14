@@ -81,7 +81,7 @@ namespace :fri3d do
     end
     desc "MLP test app"
     task :mlp do
-        cooker().generate(:ninja, "fri3d/mlp").ninja().run()
+        cooker().option("release").generate(:ninja, "fri3d/mlp").ninja().run()
     end
     desc "Create MLPs"
     task :create_mlps do
