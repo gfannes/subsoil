@@ -1,6 +1,8 @@
 #include "gubg/imgui/SelectFile.hpp"
 #include "gubg/mlp/Structure.hpp"
 #include "gubg/mlp/Parameters.hpp"
+#include "gubg/neural/Simulator.hpp"
+#include "gubg/neural/setup.hpp"
 #include "gubg/s11n.hpp"
 #include "gubg/mss.hpp"
 #include "imgui.h"
@@ -96,6 +98,10 @@ public:
             info_.emplace();
             info_->structure = structure;
             info_->parameters.setup_from(info_->structure);
+            gubg::neural::setup(info_->simulator, info_->structure, info_->first_input, info_->bias, info_->first_output);
+            info_->weights.resize(info_->simulator.nr_weights());
+            info_->states.resize(info_->simulator.nr_states());
+            info_->states[info_->bias] = 1.0;
         }
         ImGui::SameLine();
         ImGui::Text(structure_fn_.string().c_str());
@@ -145,6 +151,20 @@ public:
             nn_.goc();
             {
                 auto &wnd = io_.goc();
+                Transform t(wnd, 3,1);
+                io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(-3.0,0.0)).point(t(3.0,0.0)); });
+                io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(0.0,-1.0)).point(t(0.0,1.0)); });
+                gubg::neural::setup(info.weights, info.parameters);
+                auto draw_io = [&](auto &line){
+                    for (auto x = -3.0; x <= 3.0; x += 0.01)
+                    {
+                        info.states[info.first_input] = x;
+                        info.simulator.forward(info.states.data(), info.weights.data());
+                        const auto y = info.states[info.first_output];
+                        line.point(t(x, y));
+                    }
+                };
+                io_.line(1, sf::Color::Red, draw_io);
             }
         }
 
@@ -198,13 +218,6 @@ public:
                 ImGui::Begin("Neural Network: Multi-Layer Perceptron");
 
                 imgui();
-                nn_.goc();
-                {
-                    auto &wnd = io_.goc();
-                    Transform t(wnd, 3,1);
-                    io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(-3.0,0.0)).point(t(3.0,0.0)); });
-                    io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(0.0,-1.0)).point(t(0.0,1.0)); });
-                }
 
                 ImGui::End();
             }
@@ -246,6 +259,9 @@ private:
         gubg::mlp::Parameters parameters;
         unsigned int lix = 0;
         unsigned int nix = 0;
+        gubg::neural::Simulator<float> simulator;
+        size_t first_input, bias, first_output;
+        std::vector<float> weights, states;
     };
     std::optional<Info> info_;
 
