@@ -12,7 +12,7 @@ using namespace gubg;
 int main()
 {
     S("");
-    enum {Neuron, HiddenLayer, SineData, Nr_};
+    enum {Neuron, HiddenLayer, DeepNetwork, SineData, Nr_};
     for (auto i = 0u; i < Nr_; ++i)
     {
         std::optional<mlp::Structure> mlp;
@@ -30,6 +30,15 @@ int main()
                 mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
                 mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
                 fn = "mlp.hidden_layer.naft";
+                break;
+            case DeepNetwork:
+                mlp.emplace(1);
+                mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
+                fn = "mlp.deep_network.naft";
                 break;
             case SineData:
                 data.emplace();

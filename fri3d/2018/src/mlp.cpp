@@ -137,7 +137,7 @@ public:
             auto &model = *model_;
 
             {
-                model.cost_stddev = std::max(model.cost_stddev, 0.1);
+                model.cost_stddev = std::max(model.cost_stddev, 0.01);
                 float cost_stddev = model.cost_stddev;
                 if (ImGui::SliderFloat("Cost stddev", &cost_stddev, 0.01, 1.0))
                 {
@@ -468,7 +468,7 @@ private:
         size_t input, bias, output;
         std::vector<double> weights, states;
         double weights_stddev = 3.0;
-        double cost_stddev = 1.0;
+        double cost_stddev = 0.1;
         size_t wanted_output, loglikelihood;
     };
     std::optional<Model> model_;
