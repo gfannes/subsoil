@@ -133,29 +133,43 @@ public:
         {
             auto &model = *model_;
             ImGui::Text("Nr states: %d, nr weights: %d", model.simulator.nr_states(), model.simulator.nr_weights());
-            if (ImGui::BeginCombo("layers", cstr_("Layer ", model.lix)))
+
             {
                 const auto &s = model.structure;
+
                 for (auto lix = 0u; lix < s.layers.size(); ++lix)
-                    if (ImGui::Selectable(cstr_("Layer ", lix), lix == model.lix))
+                {
+                    if (ImGui::RadioButton(cstr_("Layer ", lix), model.lix == lix))
                     {
                         model.lix = lix;
                         model.nix = 0;
                     }
-                ImGui::EndCombo();
-            }
-            if (ImGui::BeginCombo("neurons", cstr_("Neuron ", model.nix)))
-            {
-                const auto &s = model.structure;
+                    ImGui::SameLine();
+                }
+                ImGui::NewLine();
+
                 for (auto nix = 0u; nix < s.layers[model.lix].neurons.size(); ++nix)
-                    if (ImGui::Selectable(cstr_("Neuron ", nix), nix == model.nix))
+                {
+                    if (ImGui::RadioButton(cstr_("Neuron ", nix), model.nix == nix))
                         model.nix = nix;
-                ImGui::EndCombo();
+                    ImGui::SameLine();
+                }
+                ImGui::NewLine();
             }
 
             {
-                const auto &neuron = model.structure.layers[model.lix].neurons[model.nix];
+                auto &neuron = model.structure.layers[model.lix].neurons[model.nix];
                 ImGui::Text("Transfer function: %s", to_str(neuron.transfer));
+                {
+                    float v = neuron.weight_stddev;
+                    ImGui::SliderFloat(cstr_("Stddev weight"), &v, 0.0, 10.0);
+                    neuron.weight_stddev = v;
+                }
+                {
+                    float v = neuron.bias_stddev;
+                    ImGui::SliderFloat(cstr_("Stddev bias"), &v, 0.0, 10.0);
+                    neuron.bias_stddev = v;
+                }
             }
             {
                 auto &neuron =  model.parameters.layers[model.lix].neurons[model.nix];
@@ -323,6 +337,7 @@ private:
     struct Learn
     {
         Data data;
+        double cost_stddev = 1.0;
     };
     std::optional<Learn> learn_;
 
