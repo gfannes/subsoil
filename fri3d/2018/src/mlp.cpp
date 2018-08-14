@@ -15,6 +15,7 @@
 #include <sstream>
 #include <list>
 #include <vector>
+#include <deque>
 #include <cmath>
 
 class Linear
@@ -121,10 +122,6 @@ public:
             model_.emplace();
             model_->structure = structure;
             model_->parameters.setup_from(model_->structure);
-            gubg::neural::setup(model_->simulator, model_->structure, model_->first_input, model_->bias, model_->first_output);
-            model_->weights.resize(model_->simulator.nr_weights());
-            model_->states.resize(model_->simulator.nr_states());
-            model_->states[model_->bias] = 1.0;
         }
         ImGui::SameLine();
         ImGui::Text(structure_fn_.string().c_str());
@@ -132,44 +129,74 @@ public:
         if (model_)
         {
             auto &model = *model_;
-            ImGui::Text("Nr states: %d, nr weights: %d", model.simulator.nr_states(), model.simulator.nr_weights());
 
             {
-                const auto &s = model.structure;
-
-                for (auto lix = 0u; lix < s.layers.size(); ++lix)
+                model.cost_stddev = std::max(model.cost_stddev, 0.1);
+                float cost_stddev = model.cost_stddev;
+                if (ImGui::SliderFloat("Cost stddev", &cost_stddev, 0.1, 10.0))
                 {
-                    if (ImGui::RadioButton(cstr_("Layer ", lix), model.lix == lix))
-                    {
-                        model.lix = lix;
-                        model.nix = 0;
-                    }
-                    ImGui::SameLine();
+                    model.cost_stddev = cost_stddev;
+                    model.simulator.reset();
                 }
-                ImGui::NewLine();
-
-                for (auto nix = 0u; nix < s.layers[model.lix].neurons.size(); ++nix)
-                {
-                    if (ImGui::RadioButton(cstr_("Neuron ", nix), model.nix == nix))
-                        model.nix = nix;
-                    ImGui::SameLine();
-                }
-                ImGui::NewLine();
             }
 
+            if (!model.simulator)
+                model.simulator.emplace();
+
+            auto &simulator = *model.simulator;
+
+            //Create the simulator, weights and states
+            {
+                gubg::neural::setup(simulator, model.structure, model.input, model.bias, model.output);
+                const auto nr_outputs = model.structure.nr_outputs();
+                model.wanted_output = simulator.add_external(nr_outputs);
+                std::vector<size_t> wanted_outputs(nr_outputs); std::iota(RANGE(wanted_outputs), model.wanted_output);
+                std::vector<size_t> actual_outputs(nr_outputs); std::iota(RANGE(actual_outputs), model.output);
+                simulator.add_loglikelihood(wanted_outputs, actual_outputs, model.loglikelihood, model.cost_stddev);
+                model.weights.resize(simulator.nr_weights());
+                model.states.resize(simulator.nr_states());
+                model.states[model.bias] = 1.0;
+            }
+
+            ImGui::Text("Nr states: %d, nr weights: %d", simulator.nr_states(), simulator.nr_weights());
+            ImGui::Separator();
+
+            {
+                auto &s = model.structure;
+                for (auto lix = 0u; lix < s.layers.size(); ++lix)
+                {
+                    ImGui::Text(cstr_("Layer ", lix));
+                    auto &layer = s.layers[lix];
+                    for (auto nix = 0u; nix < layer.neurons.size(); ++nix)
+                    {
+                        if (ImGui::RadioButton(cstr_("L", lix, "N", nix), (model.lix == lix) && (model.nix == nix)))
+                        {
+                            model.lix = lix;
+                            model.nix = nix;
+                        }
+                        ImGui::SameLine();
+                    }
+                    ImGui::NewLine();
+                    {
+                        float stddev = std::max(layer.neurons.front().weight_stddev, 0.1);
+                        ImGui::SliderFloat(cstr_("L", lix, " stddev weight"), &stddev, 0.1, 10.0);
+                        for (auto &n: layer.neurons)
+                            n.weight_stddev = stddev;
+                    }
+                    {
+                        float stddev = std::max(layer.neurons.front().bias_stddev, 0.1);
+                        ImGui::SliderFloat(cstr_("L", lix, " stddev bias"), &stddev, 0.1, 10.0);
+                        for (auto &n: layer.neurons)
+                            n.bias_stddev = stddev;
+                    }
+                    ImGui::Separator();
+                }
+            }
+
+            ImGui::Text(cstr_("Selected neuron: layer ", model.lix, " neuron ", model.nix));
             {
                 auto &neuron = model.structure.layers[model.lix].neurons[model.nix];
                 ImGui::Text("Transfer function: %s", to_str(neuron.transfer));
-                {
-                    float v = neuron.weight_stddev;
-                    ImGui::SliderFloat(cstr_("Stddev weight"), &v, 0.0, 10.0);
-                    neuron.weight_stddev = v;
-                }
-                {
-                    float v = neuron.bias_stddev;
-                    ImGui::SliderFloat(cstr_("Stddev bias"), &v, 0.0, 10.0);
-                    neuron.bias_stddev = v;
-                }
             }
             {
                 auto &neuron =  model.parameters.layers[model.lix].neurons[model.nix];
@@ -185,6 +212,7 @@ public:
                     neuron.bias = bias;
                 }
             }
+            ImGui::Separator();
 
             nn_.goc();
             {
@@ -196,9 +224,9 @@ public:
                 auto draw_io = [&](auto &line){
                     for (auto x = -3.0; x <= 3.0; x += 0.01)
                     {
-                        model.states[model.first_input] = x;
-                        model.simulator.forward(model.states.data(), model.weights.data());
-                        const auto y = model.states[model.first_output];
+                        model.states[model.input] = x;
+                        simulator.forward(model.states.data(), model.weights.data());
+                        const auto y = model.states[model.output];
                         line.point(t(x, y));
                     }
                 };
@@ -233,6 +261,54 @@ public:
                     const auto y = r.data(1);
                     io_.dot(3, sf::Color::Green, t(x,y));
                 }
+            }
+        }
+
+        if (model_ && learn_)
+        {
+            auto &model = *model_;
+            auto &learn = *learn_;
+            float data_ll = 0.0;
+            for (const auto &r: learn.data.records)
+            {
+                const auto x = r.data(0);
+                const auto y = r.data(1);
+                model.states[model.input] = x;
+                model.states[model.wanted_output] = y;
+                model.simulator->forward(model.states.data(), model.weights.data());
+                data_ll += model.states[model.loglikelihood];
+            }
+            ImGui::Text("data cost: %f", -data_ll);
+            float weights_ll = 0.0;
+            for (auto lix = 0u; lix < model.structure.layers.size(); ++lix)
+            {
+                for (auto nix = 0u; nix < model.structure.layers[lix].neurons.size(); ++nix)
+                {
+                    {
+                        const auto stddev = model.structure.neuron(lix, nix).weight_stddev;
+                        for (const auto weight: model.parameters.neuron(lix, nix).weights)
+                            weights_ll += -0.5*(weight*weight)/(stddev*stddev);
+                    }
+                    {
+                        const auto stddev = model.structure.neuron(lix, nix).bias_stddev;
+                        const auto bias = model.parameters.neuron(lix, nix).bias;
+                        weights_ll += -0.5*(bias*bias)/(stddev*stddev);
+                    }
+                }
+            }
+            ImGui::Text("weight cost: %f", -weights_ll);
+            ImGui::Text("total cost: %f", -data_ll-weights_ll);
+            {
+                auto &costs = learn.costs;
+                for (auto ix = 1u; ix < costs.size(); ++ix)
+                    costs[ix-1] = costs[ix];
+                costs.back() = -data_ll-weights_ll;
+                ImGui::PlotLines("cost", costs.data(), costs.size(), 0, nullptr, 0.0, FLT_MAX, ImVec2(0,100));
+                const auto p = std::minmax_element(RANGE(costs));
+                ImGui::Text("min: %f, max: %f", *p.first, *p.second);
+                ImGui::SameLine();
+                if (ImGui::Button("reset cost"))
+                    std::fill(RANGE(costs), costs.back());
             }
         }
 
@@ -305,15 +381,31 @@ public:
 private:
     std::vector<std::string> messages_;
     std::ostringstream oss_;
-    const char *cstr_(const std::string &prefix)
+    template <typename A>
+    const char *cstr_(const A &a)
     {
-        oss_.str(""); oss_ << prefix;
+        oss_.str(""); oss_ << a;
         messages_.emplace_back(oss_.str());
         return messages_.back().c_str();
     }
-    const char *cstr_(const std::string &prefix, unsigned int ix)
+    template <typename A, typename B>
+    const char *cstr_(const A &a, const B &b)
     {
-        oss_.str(""); oss_ << prefix << ix;
+        oss_.str(""); oss_ << a << b;
+        messages_.emplace_back(oss_.str());
+        return messages_.back().c_str();
+    }
+    template <typename A, typename B, typename C>
+    const char *cstr_(const A &a, const B &b, const C &c)
+    {
+        oss_.str(""); oss_ << a << b << c;
+        messages_.emplace_back(oss_.str());
+        return messages_.back().c_str();
+    }
+    template <typename A, typename B, typename C, typename D>
+    const char *cstr_(const A &a, const B &b, const C &c, const D &d)
+    {
+        oss_.str(""); oss_ << a << b << c << d;
         messages_.emplace_back(oss_.str());
         return messages_.back().c_str();
     }
@@ -327,9 +419,11 @@ private:
         gubg::mlp::Parameters parameters;
         unsigned int lix = 0;
         unsigned int nix = 0;
-        gubg::neural::Simulator<float> simulator;
-        size_t first_input, bias, first_output;
+        std::optional<gubg::neural::Simulator<float>> simulator;
+        size_t input, bias, output;
         std::vector<float> weights, states;
+        double cost_stddev = 1.0;
+        size_t wanted_output, loglikelihood;
     };
     std::optional<Model> model_;
 
@@ -337,7 +431,7 @@ private:
     struct Learn
     {
         Data data;
-        double cost_stddev = 1.0;
+        std::array<float, 1000> costs{};
     };
     std::optional<Learn> learn_;
 
