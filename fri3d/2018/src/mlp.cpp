@@ -139,7 +139,7 @@ public:
             {
                 model.cost_stddev = std::max(model.cost_stddev, 0.01);
                 float cost_stddev = model.cost_stddev;
-                if (ImGui::SliderFloat("Cost stddev", &cost_stddev, 0.01, 1.0))
+                if (ImGui::SliderFloat("Cost stddev", &cost_stddev, 0.01, 0.5))
                 {
                     model.cost_stddev = cost_stddev;
                     model.simulator.reset();
@@ -175,6 +175,7 @@ public:
 
             if (ImGui::Button("Randomize weights"))
             {
+                model.init_scg = true;
                 std::normal_distribution<double> gaussian(0.0, model.weights_stddev);
                 for (auto &l: model.parameters.layers)
                     for (auto &n: l.neurons)
@@ -341,19 +342,62 @@ public:
                 MSS(trainer.set(&model.simulator.value(), model.input, model.output));
                 trainer.add_fixed_input(model.bias, 1.0);
 
-                ImGui::SliderInt("Nr steps", &learn.nr_steps, 0, 10);
+                if (ImGui::RadioButton("No learning", learn.algo == Algo::NoLearn))
+                    learn.algo = Algo::NoLearn;
+                ImGui::SameLine();
+                if (ImGui::RadioButton("Steepest descent", learn.algo == Algo::SteepestDescent))
+                    learn.algo = Algo::SteepestDescent;
+                ImGui::SameLine();
+                if (ImGui::RadioButton("Scaled conjugate gradient", learn.algo == Algo::SCG))
+                    learn.algo = Algo::SCG;
+                ImGui::SameLine();
+                if (ImGui::RadioButton("ADAM", learn.algo == Algo::Adam))
+                    learn.algo = Algo::Adam;
 
-                learn.step = std::max(learn.step, 0.0001f);
-                ImGui::SliderFloat("Steepest descent step", &learn.step, 0.0001, 1.0);
-
-                double newlp;
-                for (int i = 0; i < learn.nr_steps; ++i)
+                switch (learn.algo)
                 {
-                    MSS(trainer.train_sd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.step, 10.0));
+                    case Algo::NoLearn:
+                        break;
+                    case Algo::SteepestDescent:
+                        {
+                            learn.step = std::max(learn.step, 0.0001f);
+                            ImGui::SliderFloat("Steepest descent step", &learn.step, 0.0001, 0.3);
+
+                            trainer.set_max_gradient_norm(10.0);
+                            double newlp;
+                            MSS(trainer.train_sd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.step));
+                            ImGui::Text("New LP: %f", (float)newlp);
+                        }
+                        break;
+                    case Algo::SCG:
+                        {
+                            if (model.init_scg)
+                                trainer.init_scg();
+                            model.init_scg = false;
+                            double newlp;
+                            MSS(trainer.train_scg(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, 1));
+                            ImGui::Text("New LP: %f", (float)newlp);
+                        }
+                        break;
+                    case Algo::Adam:
+                        {
+                            if (model.init_scg)
+                            {
+                                gubg::neural::Trainer<double>::AdamParams adam;
+                                adam.alpha = 0.01;
+                                adam.beta1 = 0.9;
+                                trainer.init_adam(adam);
+                            }
+                            model.init_scg = false;
+                            double newlp;
+                            MSS(trainer.train_adam(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev));
+                            ImGui::Text("New LP: %f", (float)newlp);
+                        }
+                        break;
                 }
-                ImGui::Text("New LP: %f", (float)newlp);
                 MSS(gubg::neural::copy_weights(model.parameters, model.weights));
             }
+
         }
 
         MSS_END();
@@ -470,16 +514,18 @@ private:
         double weights_stddev = 3.0;
         double cost_stddev = 0.1;
         size_t wanted_output, loglikelihood;
+        bool init_scg = true;
     };
     std::optional<Model> model_;
 
     std::filesystem::path data_fn_;
+    enum class Algo {NoLearn, SteepestDescent, SCG, Adam};
     struct Learn
     {
         Data data;
         std::array<float, 1000> costs{};
         std::optional<gubg::neural::Trainer<double>> trainer;
-        int nr_steps = 0;
+        Algo algo = Algo::NoLearn;
         float step = 0.01;
     };
     std::optional<Learn> learn_;
