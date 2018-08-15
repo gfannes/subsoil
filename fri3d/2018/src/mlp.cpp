@@ -332,8 +332,8 @@ public:
             ImGui::Separator();
 
             if (!learn.trainer)
-                learn.trainer.emplace(model.structure.nr_inputs, model.structure.nr_outputs());
             {
+                learn.trainer.emplace(model.structure.nr_inputs, model.structure.nr_outputs());
                 auto &trainer = *learn.trainer;
                 for (const auto &r: learn.data.records)
                 {
@@ -341,6 +341,10 @@ public:
                 }
                 MSS(trainer.set(&model.simulator.value(), model.input, model.output));
                 trainer.add_fixed_input(model.bias, 1.0);
+            }
+
+            {
+                auto &trainer = *learn.trainer;
 
                 if (ImGui::RadioButton("No learning", learn.algo == Algo::NoLearn))
                     learn.algo = Algo::NoLearn;
