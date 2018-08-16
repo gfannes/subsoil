@@ -20,6 +20,8 @@
 #include <cmath>
 #include <random>
 
+using DataSet = gubg::data::Set<double>;
+
 std::mt19937 rng;
 
 class Linear
@@ -98,7 +100,28 @@ private:
     std::array<sf::Vertex, 4> vertices_;
 };
 
-using Data = gubg::data::Set<double>;
+class Arrow
+{
+public:
+    Arrow(sf::Color color, sf::Vector2f pos, sf::Vector2f dir)
+    {
+        S("");L(C(pos.x)C(pos.y)C(dir.x)C(dir.y));
+        auto norm = sf::Vector2f(-dir.y, dir.x);
+        vertices_[0] = sf::Vector2f(pos+norm*0.2f);
+        vertices_[1] = sf::Vector2f(pos-norm*0.2f);
+        vertices_[2] = sf::Vector2f(pos+dir);
+        for (auto &v: vertices_)
+            v.color = color;
+    }
+
+    template <typename Window>
+    void draw(Window &wnd) const
+    {
+        wnd.draw(vertices_.data(), vertices_.size(), sf::Triangles);
+    }
+private:
+    std::array<sf::Vertex, 3> vertices_;
+};
 
 class App
 {
@@ -254,92 +277,130 @@ public:
             {
                 auto &wnd = io_.goc();
                 Transform t(wnd, 3,1);
-                io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(-3.0,0.0)).point(t(3.0,0.0)); });
-                io_.line(1, sf::Color::Red, [&](auto &line){ line.point(t(0.0,-1.0)).point(t(0.0,1.0)); });
+                io_.line(1, sf::Color(30, 30, 0), [&](auto &line){ line.point(t(-3.0,0.0)).point(t(3.0,0.0)); });
+                io_.line(1, sf::Color(30, 30, 0), [&](auto &line){ line.point(t(0.0,-1.0)).point(t(0.0,1.0)); });
                 MSS(gubg::neural::setup(model.weights, model.parameters));
-                auto draw_io = [&](auto &line){
-                    for (auto x = -3.0; x <= 3.0; x += 0.01)
+                if (false) {}
+                else if (model.structure.nr_inputs == 1 && model.structure.nr_outputs() == 1)
+                {
+                    auto draw_io = [&](auto &line){
+                        for (auto x = -3.0; x <= 3.0; x += 0.01)
+                        {
+                            model.states[model.input] = x;
+                            simulator.forward(model.states.data(), model.weights.data());
+                            const auto y = model.states[model.output];
+                            line.point(t(x, y));
+                        }
+                    };
+                    io_.line(1, sf::Color::Red, draw_io);
+                }
+                else if (model.structure.nr_inputs == 2 && model.structure.nr_outputs() == 2)
+                {
+                    for (auto x0 = -3.0; x0 <= 3.0; x0 += 0.1)
                     {
-                        model.states[model.input] = x;
-                        simulator.forward(model.states.data(), model.weights.data());
-                        const auto y = model.states[model.output];
-                        line.point(t(x, y));
+                        for (auto x1 = -1.0; x1 <= 1.0; x1 += 0.1)
+                        {
+                            model.states[model.input] = x0;
+                            model.states[model.input+1] = x1;
+                            simulator.forward(model.states.data(), model.weights.data());
+                            const auto y0 = model.states[model.output];
+                            const auto y1 = model.states[model.output+1];
+                            io_.arrow(sf::Color::Red, t(x0,x1), sf::Vector2f(y0,y1)*10.0f);
+                        }
                     }
-                };
-                io_.line(1, sf::Color::Red, draw_io);
+                }
             }
         }
 
-        if (gubg::imgui::select_file("Data", data_fn_))
+        if (gubg::imgui::select_file("Dataset", data_fn_))
         {
             std::cout << "Selected data file " << data_fn_ << std::endl;
             learn_.reset();
+            dataset_.reset();
             error_.str("");
-            Data data;
-            MSS(gubg::s11n::read_object_from_file(data_fn_, ":data.Set", data), error_ << "Could not read data from " << data_fn_.string());
-            learn_.emplace();
-            learn_->data = data;
+            DataSet dataset;
+            MSS(gubg::s11n::read_object_from_file(data_fn_, ":data.Set", dataset), error_ << "Could not read dataset from " << data_fn_.string());
+            dataset_.emplace(dataset);
         }
         ImGui::SameLine();
         ImGui::Text(data_fn_.string().c_str());
 
-        if (learn_)
+        if (dataset_)
         {
-            auto &learn = *learn_;
-            ImGui::Text("Nr records: %d", learn.data.records.size());
+            auto &dataset = *dataset_;
+            ImGui::Text("Nr records: %d", dataset.records.size());
 
             {
                 auto &wnd = io_.goc();
                 Transform t(wnd, 3,1);
-                for (const auto &r: learn.data.records)
+                for (const auto &r: dataset.records)
                 {
-                    const auto x = r.data(0);
-                    const auto y = r.data(1);
-                    io_.dot(3, sf::Color::Green, t(x,y));
+                    if (false) {}
+                    else if (r.has_dim(0,1) && r.has_dim(1,1))
+                    {
+                        const auto &x = r.data(0);
+                        const auto &y = r.data(1);
+                        io_.dot(3, sf::Color::Green, t(x,y));
+                    }
+                    else if (r.has_dim(0,2) && r.has_dim(1,2))
+                    {
+                        io_.arrow(sf::Color::Green, t(r.data(0,0), r.data(0,1)), sf::Vector2f(r.data(1,0), r.data(1,1))*20.0f);
+                    }
                 }
             }
         }
 
-        if (model_ && learn_)
+        if (model_ && dataset_)
         {
             auto &model = *model_;
+            auto &dataset = *dataset_;
+
+            if (!learn_)
+                learn_.emplace();
             auto &learn = *learn_;
+
             double data_ll = 0.0;
-            for (const auto &r: learn.data.records)
             {
-                const auto x = r.data(0);
-                const auto y = r.data(1);
-                model.states[model.input] = x;
-                model.states[model.wanted_output] = y;
-                model.simulator->forward(model.states.data(), model.weights.data());
-                data_ll += model.states[model.loglikelihood];
-            }
-            data_ll /= learn.data.records.size();
-            ImGui::Text("data cost: %f", (float)-data_ll);
-            double weights_ll = 0.0;
-            unsigned int nr_weights = 0;
-            for (auto lix = 0u; lix < model.structure.layers.size(); ++lix)
-            {
-                for (auto nix = 0u; nix < model.structure.layers[lix].neurons.size(); ++nix)
+                for (const auto &r: dataset.records)
                 {
+                    const auto &x = r.fields[0];
+                    const auto &y = r.fields[1];
+                    std::copy(RANGE(x), model.states.begin()+model.input);
+                    std::copy(RANGE(y), model.states.begin()+model.wanted_output);
+                    model.simulator->forward(model.states.data(), model.weights.data());
+                    data_ll += model.states[model.loglikelihood];
+                }
+                data_ll /= dataset.records.size();
+                ImGui::Text("data cost: %f", (float)-data_ll);
+            }
+
+            double weights_ll = 0.0;
+            {
+                unsigned int nr_weights = 0;
+                for (auto lix = 0u; lix < model.structure.layers.size(); ++lix)
+                {
+                    for (auto nix = 0u; nix < model.structure.layers[lix].neurons.size(); ++nix)
                     {
-                        const auto stddev = model.structure.neuron(lix, nix).weight_stddev;
-                        const auto &weights = model.parameters.neuron(lix, nix).weights;
-                        for (const auto weight: weights)
-                            weights_ll += -0.5*(weight*weight)/(stddev*stddev);
-                        nr_weights += weights.size();
-                    }
-                    {
-                        const auto stddev = model.structure.neuron(lix, nix).bias_stddev;
-                        const auto bias = model.parameters.neuron(lix, nix).bias;
-                        weights_ll += -0.5*(bias*bias)/(stddev*stddev);
-                        ++nr_weights;
+                        {
+                            const auto stddev = model.structure.neuron(lix, nix).weight_stddev;
+                            const auto &weights = model.parameters.neuron(lix, nix).weights;
+                            for (const auto weight: weights)
+                                weights_ll += -0.5*(weight*weight)/(stddev*stddev);
+                            nr_weights += weights.size();
+                        }
+                        {
+                            const auto stddev = model.structure.neuron(lix, nix).bias_stddev;
+                            const auto bias = model.parameters.neuron(lix, nix).bias;
+                            weights_ll += -0.5*(bias*bias)/(stddev*stddev);
+                            ++nr_weights;
+                        }
                     }
                 }
+                weights_ll /= nr_weights;
+                ImGui::Text("weight cost: %f", (float)-weights_ll);
             }
-            weights_ll /= nr_weights;
-            ImGui::Text("weight cost: %f", (float)-weights_ll);
             ImGui::Text("total cost: %f", (float)(-data_ll-weights_ll));
+
             {
                 auto &costs = learn.costs;
                 for (auto ix = 1u; ix < costs.size(); ++ix)
@@ -358,7 +419,7 @@ public:
             {
                 learn.trainer.emplace(model.structure.nr_inputs, model.structure.nr_outputs());
                 auto &trainer = *learn.trainer;
-                for (const auto &r: learn.data.records)
+                for (const auto &r: dataset.records)
                 {
                     MSS(trainer.add(r.fields[0], r.fields[1]));
                 }
@@ -547,10 +608,11 @@ private:
     std::optional<Model> model_;
 
     std::filesystem::path data_fn_;
+    std::optional<DataSet> dataset_;
+
     enum class Algo {NoLearn, SteepestDescent, SCG, Adam};
     struct Learn
     {
-        Data data;
         std::array<float, 1000> costs{};
         std::optional<gubg::neural::Trainer<double>> trainer;
         Algo algo = Algo::NoLearn;
@@ -569,6 +631,7 @@ private:
         sf::Sprite sprite;
         std::list<Line> lines;
         std::list<Dot> dots;
+        std::list<Arrow> arrows;
         void setup(const std::string &caption, unsigned int width, unsigned int height, double xpos, sf::Color color, const std::optional<sf::Font> &font)
         {
             this->caption = caption;
@@ -592,6 +655,7 @@ private:
                 rt.draw(text);
                 lines.clear();
                 dots.clear();
+                arrows.clear();
             }
             return rt;
         }
@@ -605,12 +669,18 @@ private:
         {
             dots.emplace_back(width, color, pos);
         }
+        void arrow(const sf::Color &color, const sf::Vector2f &pos, const sf::Vector2f &dir)
+        {
+            arrows.emplace_back(color, pos, dir);
+        }
         void draw(sf::RenderWindow &wnd)
         {
             for (const auto &line: lines)
                 line.draw(rt);
             for (const auto &dot: dots)
                 dot.draw(rt);
+            for (const auto &arrow: arrows)
+                arrow.draw(rt);
             sprite.setPosition(sf::Vector2f(xpos, ypos));
             sprite.setScale(1.0, -1.0);
             sprite.setTexture(rt.getTexture());

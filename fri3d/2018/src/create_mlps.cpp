@@ -16,7 +16,7 @@ std::mt19937 rng;
 int main()
 {
     S("");
-    enum {Neuron, HiddenLayer, DeepNetwork, SineData, NoisySineData, CirleData, Nr_};
+    enum {Neuron, HiddenLayer, DeepNetwork, Two33Two, Two555Two, Two515Two, Two55155Two, SineData, NoisySineData, CircleData, CircleDataSame, TwoCircleData, Nr_};
     for (auto i = 0u; i < Nr_; ++i)
     {
         std::optional<mlp::Structure> mlp;
@@ -43,6 +43,39 @@ int main()
                 mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
                 mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
                 fn = "mlp.deep_network.naft";
+                break;
+            case Two33Two:
+                mlp.emplace(2);
+                mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 2, 0.0, 0.0);
+                fn = "mlp.2332.naft";
+                break;
+            case Two555Two:
+                mlp.emplace(2);
+                mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 2, 0.0, 0.0);
+                fn = "mlp.25552.naft";
+                break;
+            case Two515Two:
+                mlp.emplace(2);
+                mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 1, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 2, 0.0, 0.0);
+                fn = "mlp.25152.naft";
+                break;
+            case Two55155Two:
+                mlp.emplace(2);
+                mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 1, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 2, 0.0, 0.0);
+                fn = "mlp.2551552.naft";
                 break;
             case SineData:
                 data.emplace();
@@ -75,17 +108,52 @@ int main()
                     fn = "data.noisy_sine.naft";
                 }
                 break;
-            case CirleData:
+            case CircleData:
                 data.emplace();
                 data->fields.emplace_back("input", 2);
                 data->fields.emplace_back("output", 2);
                 for (auto angle = 0.0; angle <= gubg::math::tau; angle += gubg::math::tau/30)
                 {
                     auto &r = data->add_record();
-                    r.add_data(std::cos(angle), std::sin(angle));
+                    r.add_data(2.5*std::cos(angle), 0.8*std::sin(angle));
                     r.add_data(-std::sin(angle), std::cos(angle));
                 }
                     fn = "data.circle.naft";
+                break;
+            case CircleDataSame:
+                {
+                    data.emplace();
+                    data->fields.emplace_back("input", 2);
+                    data->fields.emplace_back("output", 2);
+                    std::uniform_real_distribution<> uniform(0.0, gubg::math::tau);
+                    for (auto i = 0u; i < 100; ++i)
+                    {
+                        const auto angle = uniform(rng);
+                        auto &r = data->add_record();
+                        r.add_data(2.5*std::cos(angle), 0.8*std::sin(angle));
+                        r.add_data(2.5*std::cos(angle), 0.8*std::sin(angle));
+                    }
+                    fn = "data.circle_same.naft";
+                }
+                break;
+            case TwoCircleData:
+                data.emplace();
+                data->fields.emplace_back("input", 2);
+                data->fields.emplace_back("output", 2);
+                for (auto angle = 0.0; angle <= gubg::math::tau; angle += gubg::math::tau/30)
+                {
+                    {
+                        auto &r = data->add_record();
+                        r.add_data(2.5*std::cos(angle), 0.8*std::sin(angle));
+                        r.add_data(-std::sin(angle), std::cos(angle));
+                    }
+                    {
+                        auto &r = data->add_record();
+                        r.add_data(1.25*std::cos(angle), 0.4*std::sin(angle));
+                        r.add_data(std::sin(angle), -std::cos(angle));
+                    }
+                }
+                    fn = "data.two_circle.naft";
                 break;
             default:
                 break;
