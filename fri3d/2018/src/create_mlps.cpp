@@ -7,12 +7,15 @@
 #include <string>
 #include <iostream>
 #include <cmath>
+#include <random>
 using namespace gubg;
+
+std::mt19937 rng;
 
 int main()
 {
     S("");
-    enum {Neuron, HiddenLayer, DeepNetwork, SineData, Nr_};
+    enum {Neuron, HiddenLayer, DeepNetwork, SineData, NoisySineData, Nr_};
     for (auto i = 0u; i < Nr_; ++i)
     {
         std::optional<mlp::Structure> mlp;
@@ -53,6 +56,23 @@ int main()
                     r.add_data(y);
                 }
                 fn = "data.sine.naft";
+                break;
+            case NoisySineData:
+                {
+                    std::normal_distribution<> normal(0, 0.1);
+                    data.emplace();
+                    data->fields.emplace_back("input", 1);
+                    data->fields.emplace_back("output", 1);
+                    for (auto x = -3.0; x <= 3.0; x += 0.2)
+                    {
+                        auto y = 0.7*std::sin(x)+normal(rng);
+                        L(C(x)C(y));
+                        auto &r = data->add_record();
+                        r.add_data(x);
+                        r.add_data(y);
+                    }
+                    fn = "data.noisy_sine.naft";
+                }
                 break;
             default:
                 break;

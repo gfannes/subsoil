@@ -173,15 +173,33 @@ public:
             ImGui::Text("Nr states: %d, nr weights: %d", simulator.nr_states(), simulator.nr_weights());
             ImGui::Separator();
 
-            if (ImGui::Button("Randomize weights"))
+            {
+                float v = model.randomize_weights_stddev;
+                ImGui::SliderFloat("rng_weights_stddev", &v, 0.001, 1.0);
+                model.randomize_weights_stddev = v;
+            }
+            if (ImGui::Button("Randomize absolute"))
             {
                 model.init_scg = true;
-                std::normal_distribution<double> gaussian(0.0, model.weights_stddev);
+                std::normal_distribution<double> gaussian(0.0, model.randomize_weights_stddev);
                 for (auto &l: model.parameters.layers)
                     for (auto &n: l.neurons)
                     {
                         for (auto &w: n.weights)
                             w = gaussian(rng);
+                        n.bias = gaussian(rng);
+                    }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Randomize relative"))
+            {
+                model.init_scg = true;
+                std::normal_distribution<double> gaussian(0.0, model.randomize_weights_stddev);
+                for (auto &l: model.parameters.layers)
+                    for (auto &n: l.neurons)
+                    {
+                        for (auto &w: n.weights)
+                            w += gaussian(rng);
                         n.bias = gaussian(rng);
                     }
             }
@@ -522,6 +540,7 @@ private:
         std::vector<double> weights, states;
         double weights_stddev = 3.0;
         double cost_stddev = 0.1;
+        double randomize_weights_stddev = 1.0;
         size_t wanted_output, loglikelihood;
         bool init_scg = true;
     };
