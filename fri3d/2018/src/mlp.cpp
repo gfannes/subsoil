@@ -299,22 +299,27 @@ public:
             data_ll /= learn.data.records.size();
             ImGui::Text("data cost: %f", (float)-data_ll);
             double weights_ll = 0.0;
+            unsigned int nr_weights = 0;
             for (auto lix = 0u; lix < model.structure.layers.size(); ++lix)
             {
                 for (auto nix = 0u; nix < model.structure.layers[lix].neurons.size(); ++nix)
                 {
                     {
                         const auto stddev = model.structure.neuron(lix, nix).weight_stddev;
-                        for (const auto weight: model.parameters.neuron(lix, nix).weights)
+                        const auto &weights = model.parameters.neuron(lix, nix).weights;
+                        for (const auto weight: weights)
                             weights_ll += -0.5*(weight*weight)/(stddev*stddev);
+                        nr_weights += weights.size();
                     }
                     {
                         const auto stddev = model.structure.neuron(lix, nix).bias_stddev;
                         const auto bias = model.parameters.neuron(lix, nix).bias;
                         weights_ll += -0.5*(bias*bias)/(stddev*stddev);
+                        ++nr_weights;
                     }
                 }
             }
+            weights_ll /= nr_weights;
             ImGui::Text("weight cost: %f", (float)-weights_ll);
             ImGui::Text("total cost: %f", (float)(-data_ll-weights_ll));
             {
@@ -379,7 +384,7 @@ public:
                                 trainer.init_scg();
                             model.init_scg = false;
                             double newlp;
-                            MSS(trainer.train_scg(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, 1));
+                            MSS(trainer.train_scg(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, 10));
                             ImGui::Text("New LP: %f", (float)newlp);
                         }
                         break;
