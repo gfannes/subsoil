@@ -193,7 +193,7 @@ public:
                 model.states[model.bias] = 1.0;
             }
 
-            ImGui::Text("Nr states: %d, nr weights: %d", simulator.nr_states(), simulator.nr_weights());
+            ImGui::Text("Nr inputs: %d, nr weights: %d", model.structure.nr_inputs, simulator.nr_weights());
             ImGui::Separator();
 
             {
@@ -469,16 +469,14 @@ public:
                         break;
                     case Algo::Adam:
                         {
-                            if (model.init_scg)
+                            double newlp;
+                            if (!trainer.train_adam(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev))
                             {
                                 gubg::neural::Trainer<double>::AdamParams adam;
                                 adam.alpha = 0.01;
                                 adam.beta1 = 0.9;
                                 trainer.init_adam(adam);
                             }
-                            model.init_scg = false;
-                            double newlp;
-                            MSS(trainer.train_adam(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev));
                             ImGui::Text("New LP: %f", (float)newlp);
                         }
                         break;

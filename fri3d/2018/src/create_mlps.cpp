@@ -16,7 +16,13 @@ std::mt19937 rng;
 int main()
 {
     S("");
-    enum {Neuron, HiddenLayer, DeepNetwork, Two33Two, Two555Two, Two515Two, Two55155Two, SineData, NoisySineData, CircleData, CircleDataSame, TwoCircleData, Nr_};
+    enum {LinearNeuron,
+        TanhNeuron, TanhHiddenLayer, TanhDeepNetwork,
+        LeakyReLUNeuron, LeakyReLUHiddenLayer, LeakyReLUDeepNetwork,
+        SoftPlusNeuron, SoftPlusHiddenLayer, SoftPlusDeepNetwork,
+        Two33Two, Two555Two, Two515Two, Two55155TwoTanh, Two55155TwoLeakyReLU, Two55155TwoSoftPlus,
+        LinearData, NoisyLinearData, SineData, NoisySineData,
+        CircleData, CircleDataSame, TwoCircleData, Nr_};
     for (auto i = 0u; i < Nr_; ++i)
     {
         std::optional<mlp::Structure> mlp;
@@ -24,25 +30,70 @@ int main()
         std::filesystem::path fn;
         switch (i)
         {
-            case Neuron:
+            case LinearNeuron:
+                mlp.emplace(1);
+                mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
+                fn = "mlp.linear_neuron.naft";
+                break;
+            case TanhNeuron:
                 mlp.emplace(1);
                 mlp->add_layer(neural::Transfer::Tanh, 1, 0.0, 0.0);
-                fn = "mlp.neuron.naft";
+                fn = "mlp.tanh_neuron.naft";
                 break;
-            case HiddenLayer:
+            case TanhHiddenLayer:
                 mlp.emplace(1);
                 mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
                 mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
-                fn = "mlp.hidden_layer.naft";
+                fn = "mlp.tanh_hidden_layer.naft";
                 break;
-            case DeepNetwork:
+            case TanhDeepNetwork:
                 mlp.emplace(1);
                 mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
                 mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
                 mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
                 mlp->add_layer(neural::Transfer::Tanh, 3, 0.0, 0.0);
                 mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
-                fn = "mlp.deep_network.naft";
+                fn = "mlp.tanh_deep_network.naft";
+                break;
+            case LeakyReLUNeuron:
+                mlp.emplace(1);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 1, 0.0, 0.0);
+                fn = "mlp.relu_neuron.naft";
+                break;
+            case LeakyReLUHiddenLayer:
+                mlp.emplace(1);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
+                fn = "mlp.relu_hidden_layer.naft";
+                break;
+            case LeakyReLUDeepNetwork:
+                mlp.emplace(1);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
+                fn = "mlp.relu_deep_network.naft";
+                break;
+            case SoftPlusNeuron:
+                mlp.emplace(1);
+                mlp->add_layer(neural::Transfer::SoftPlus, 1, 0.0, 0.0);
+                fn = "mlp.softplus_neuron.naft";
+                break;
+            case SoftPlusHiddenLayer:
+                mlp.emplace(1);
+                mlp->add_layer(neural::Transfer::SoftPlus, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
+                fn = "mlp.softplus_hidden_layer.naft";
+                break;
+            case SoftPlusDeepNetwork:
+                mlp.emplace(1);
+                mlp->add_layer(neural::Transfer::SoftPlus, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::SoftPlus, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::SoftPlus, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::SoftPlus, 3, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 1, 0.0, 0.0);
+                fn = "mlp.softplus_deep_network.naft";
                 break;
             case Two33Two:
                 mlp.emplace(2);
@@ -67,7 +118,7 @@ int main()
                 mlp->add_layer(neural::Transfer::Linear, 2, 0.0, 0.0);
                 fn = "mlp.25152.naft";
                 break;
-            case Two55155Two:
+            case Two55155TwoTanh:
                 mlp.emplace(2);
                 mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
                 mlp->add_layer(neural::Transfer::Tanh, 5, 0.0, 0.0);
@@ -77,6 +128,55 @@ int main()
                 mlp->add_layer(neural::Transfer::Linear, 2, 0.0, 0.0);
                 fn = "mlp.2551552.naft";
                 break;
+            case Two55155TwoLeakyReLU:
+                mlp.emplace(2);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 1, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::LeakyReLU, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::Linear, 2, 0.0, 0.0);
+                fn = "mlp.2551552_relu.naft";
+                break;
+            case Two55155TwoSoftPlus:
+                mlp.emplace(2);
+                mlp->add_layer(neural::Transfer::SoftPlus, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::SoftPlus, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::SoftPlus, 1, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::SoftPlus, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::SoftPlus, 5, 0.0, 0.0);
+                mlp->add_layer(neural::Transfer::SoftPlus, 2, 0.0, 0.0);
+                fn = "mlp.2551552_sp.naft";
+                break;
+            case LinearData:
+                data.emplace();
+                data->fields.emplace_back("input", 1);
+                data->fields.emplace_back("output", 1);
+                for (auto x = -3.0; x <= 3.0; x += 0.1)
+                {
+                    auto y = x/4.0+0.1;
+                    auto &r = data->add_record();
+                    r.add_data(x);
+                    r.add_data(y);
+                }
+                fn = "data.linear.naft";
+                break;
+            case NoisyLinearData:
+                {
+                    std::normal_distribution<> normal(0, 0.1);
+                    data.emplace();
+                    data->fields.emplace_back("input", 1);
+                    data->fields.emplace_back("output", 1);
+                    for (auto x = -3.0; x <= 3.0; x += 0.2)
+                    {
+                        auto y = x/5.0+0.1+normal(rng);
+                        auto &r = data->add_record();
+                        r.add_data(x);
+                        r.add_data(y);
+                    }
+                    fn = "data.noisy_linear.naft";
+                }
+                break;
             case SineData:
                 data.emplace();
                 data->fields.emplace_back("input", 1);
@@ -84,7 +184,6 @@ int main()
                 for (auto x = -3.0; x <= 3.0; x += 0.1)
                 {
                     auto y = std::sin(x);
-                    L(C(x)C(y));
                     auto &r = data->add_record();
                     r.add_data(x);
                     r.add_data(y);
@@ -100,7 +199,6 @@ int main()
                     for (auto x = -3.0; x <= 3.0; x += 0.2)
                     {
                         auto y = 0.7*std::sin(x)+normal(rng);
-                        L(C(x)C(y));
                         auto &r = data->add_record();
                         r.add_data(x);
                         r.add_data(y);
