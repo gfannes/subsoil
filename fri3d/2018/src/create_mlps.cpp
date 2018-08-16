@@ -4,6 +4,7 @@
 #include "gubg/file/System.hpp"
 #include "gubg/debug.hpp"
 #include "gubg/std/optional.hpp"
+#include "gubg/math/constants.hpp"
 #include <string>
 #include <iostream>
 #include <cmath>
@@ -15,7 +16,7 @@ std::mt19937 rng;
 int main()
 {
     S("");
-    enum {Neuron, HiddenLayer, DeepNetwork, SineData, NoisySineData, Nr_};
+    enum {Neuron, HiddenLayer, DeepNetwork, SineData, NoisySineData, CirleData, Nr_};
     for (auto i = 0u; i < Nr_; ++i)
     {
         std::optional<mlp::Structure> mlp;
@@ -73,6 +74,18 @@ int main()
                     }
                     fn = "data.noisy_sine.naft";
                 }
+                break;
+            case CirleData:
+                data.emplace();
+                data->fields.emplace_back("input", 2);
+                data->fields.emplace_back("output", 2);
+                for (auto angle = 0.0; angle <= gubg::math::tau; angle += gubg::math::tau/30)
+                {
+                    auto &r = data->add_record();
+                    r.add_data(std::cos(angle), std::sin(angle));
+                    r.add_data(-std::sin(angle), std::cos(angle));
+                }
+                    fn = "data.circle.naft";
                 break;
             default:
                 break;
