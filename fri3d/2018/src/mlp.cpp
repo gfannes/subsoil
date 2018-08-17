@@ -433,6 +433,9 @@ public:
                 if (ImGui::RadioButton("No learning", learn.algo == Algo::NoLearn))
                     learn.algo = Algo::NoLearn;
                 ImGui::SameLine();
+                if (ImGui::RadioButton("Metropolis", learn.algo == Algo::Metropolis))
+                    learn.algo = Algo::Metropolis;
+                ImGui::SameLine();
                 if (ImGui::RadioButton("Steepest descent", learn.algo == Algo::SteepestDescent))
                     learn.algo = Algo::SteepestDescent;
                 ImGui::SameLine();
@@ -480,7 +483,17 @@ public:
                             ImGui::Text("New LP: %f", (float)newlp);
                         }
                         break;
-                }
+                     case Algo::Metropolis:
+                        {
+                            learn.step = std::max(learn.motion_stddev, 0.0001f);
+                            ImGui::SliderFloat("Metropolis step", &learn.motion_stddev, 0.0001f, 0.1f);
+
+                            double newlp;
+                            MSS(trainer.train_metropolis(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.motion_stddev, 100));
+                            ImGui::Text("New LP: %f", (float)newlp);
+                        }
+                        break;
+               }
                 MSS(gubg::neural::copy_weights(model.parameters, model.weights));
             }
 
@@ -608,13 +621,14 @@ private:
     std::filesystem::path data_fn_;
     std::optional<DataSet> dataset_;
 
-    enum class Algo {NoLearn, SteepestDescent, SCG, Adam};
+    enum class Algo {NoLearn, Metropolis, SteepestDescent, SCG, Adam};
     struct Learn
     {
         std::array<float, 1000> costs{};
         std::optional<gubg::neural::Trainer<double>> trainer;
         Algo algo = Algo::NoLearn;
         float step = 0.01;
+        float motion_stddev = 0.001;
     };
     std::optional<Learn> learn_;
 
