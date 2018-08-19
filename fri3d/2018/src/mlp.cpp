@@ -128,7 +128,7 @@ class App
 public:
     bool imgui()
     {
-        MSS_BEGIN(bool);
+        MSS_BEGIN(bool, "");
         /* ImGui::ShowDemoWindow(); */
 
         messages_.resize(0);
@@ -142,8 +142,7 @@ public:
         if (gubg::imgui::select_file("MLP structure", structure_fn_))
         {
             std::cout << "Selected structure file " << structure_fn_ << std::endl;
-            if (learn_)
-                learn_->trainer.reset();
+            learn_.reset();
             model_.reset();
             error_.str("");
             gubg::mlp::Structure structure;
@@ -160,45 +159,79 @@ public:
             auto &model = *model_;
 
             {
-                model.cost_stddev = std::max(model.cost_stddev, 0.01);
-                float cost_stddev = model.cost_stddev;
-                if (ImGui::SliderFloat("Cost stddev", &cost_stddev, 0.01, 0.5))
+                auto &simulator = goc_simulator_();
+
+                //Network structure
                 {
-                    model.cost_stddev = cost_stddev;
-                    model.simulator.reset();
+                    ImGui::Text("Nr inputs: %d, nr weights: %d", model.structure.nr_inputs, simulator.nr_weights());
+                    auto &s = model.structure;
+                    for (auto lix = 0u; lix < s.layers.size(); ++lix)
+                    {
+                        ImGui::Text(cstr_("Layer ", lix));
+                        ImGui::SameLine();
+                        auto &layer = s.layers[lix];
+                        for (auto nix = 0u; nix < layer.neurons.size(); ++nix)
+                        {
+                            if (ImGui::RadioButton(cstr_("L", lix, "N", nix), (model.lix == lix) && (model.nix == nix)))
+                            {
+                                model.lix = lix;
+                                model.nix = nix;
+                            }
+                            ImGui::SameLine();
+                        }
+                        for (auto &n: layer.neurons)
+                            n.weight_stddev = model.weights_stddev;
+                        for (auto &n: layer.neurons)
+                            n.bias_stddev = model.weights_stddev;
+                        ImGui::NewLine();
+                        ImGui::Separator();
+                    }
+                    ImGui::Separator();
                 }
+
+                ImGui::Text(cstr_("Selected neuron: layer ", model.lix, " neuron ", model.nix));
+                {
+                    auto &neuron =  model.parameters.layers[model.lix].neurons[model.nix];
+                    for (auto wix = 0u; wix < neuron.weights.size(); ++wix)
+                    {
+                        float weight = neuron.weights[wix];
+                        ImGui::SliderFloat(cstr_("Weight ", wix), &weight, -3.0, 3.0);
+                        neuron.weights[wix] = weight;
+                    }
+                    {
+                        float bias = neuron.bias;
+                        ImGui::SliderFloat(cstr_("Bias"), &bias, -3.0, 3.0);
+                        neuron.bias = bias;
+                    }
+                    {
+                        auto &neuron = model.structure.layers[model.lix].neurons[model.nix];
+                        ImGui::Text("Transfer function: %s", to_str(neuron.transfer));
+                    }
+                }
+                ImGui::Separator();
+
+                //Cost and weight stddev
+                {
+                    model.cost_stddev = std::max(model.cost_stddev, 0.01);
+                    float cost_stddev = model.cost_stddev;
+                    if (ImGui::SliderFloat("Output stddev", &cost_stddev, 0.01, 0.5))
+                    {
+                        model.cost_stddev = std::max<float>(cost_stddev, 0.01);
+                        model.simulator.reset();
+                    }
+                }
+                {
+                    model.weights_stddev = std::max(model.weights_stddev, 0.1);
+                    float weights_stddev = model.weights_stddev;
+                    if (ImGui::SliderFloat("Weights stddev", &weights_stddev, 0.1, 10.0))
+                        model.weights_stddev = weights_stddev;
+                }
+                ImGui::Separator();
             }
-            {
-                model.weights_stddev = std::max(model.weights_stddev, 0.1);
-                float weights_stddev = model.weights_stddev;
-                if (ImGui::SliderFloat("Weights stddev", &weights_stddev, 0.1, 10.0))
-                    model.weights_stddev = weights_stddev;
-            }
-
-            if (!model.simulator)
-                model.simulator.emplace();
-
-            auto &simulator = *model.simulator;
-
-            //Create the simulator, weights and states
-            {
-                MSS(gubg::neural::setup(simulator, model.structure, model.input, model.bias, model.output));
-                const auto nr_outputs = model.structure.nr_outputs();
-                model.wanted_output = simulator.add_external(nr_outputs);
-                std::vector<size_t> wanted_outputs(nr_outputs); std::iota(RANGE(wanted_outputs), model.wanted_output);
-                std::vector<size_t> actual_outputs(nr_outputs); std::iota(RANGE(actual_outputs), model.output);
-                MSS(simulator.add_loglikelihood(wanted_outputs, actual_outputs, model.loglikelihood, model.cost_stddev));
-                model.weights.resize(simulator.nr_weights());
-                model.states.resize(simulator.nr_states());
-                model.states[model.bias] = 1.0;
-            }
-
-            ImGui::Text("Nr inputs: %d, nr weights: %d", model.structure.nr_inputs, simulator.nr_weights());
-            ImGui::Separator();
 
             {
                 float v = model.randomize_weights_stddev;
-                ImGui::SliderFloat("rng_weights_stddev", &v, 0.001, 1.0);
+                ImGui::SliderFloat("Rnd stddev", &v, 0.001, 1.0);
                 model.randomize_weights_stddev = v;
             }
             if (ImGui::Button("Randomize absolute"))
@@ -228,53 +261,9 @@ public:
             }
             ImGui::Separator();
 
-            {
-                auto &s = model.structure;
-                for (auto lix = 0u; lix < s.layers.size(); ++lix)
-                {
-                    ImGui::Text(cstr_("Layer ", lix));
-                    auto &layer = s.layers[lix];
-                    for (auto nix = 0u; nix < layer.neurons.size(); ++nix)
-                    {
-                        if (ImGui::RadioButton(cstr_("L", lix, "N", nix), (model.lix == lix) && (model.nix == nix)))
-                        {
-                            model.lix = lix;
-                            model.nix = nix;
-                        }
-                        ImGui::SameLine();
-                    }
-                    for (auto &n: layer.neurons)
-                        n.weight_stddev = model.weights_stddev;
-                    for (auto &n: layer.neurons)
-                        n.bias_stddev = model.weights_stddev;
-                    ImGui::NewLine();
-                    ImGui::Separator();
-                }
-            }
-
-            ImGui::Text(cstr_("Selected neuron: layer ", model.lix, " neuron ", model.nix));
-            {
-                auto &neuron = model.structure.layers[model.lix].neurons[model.nix];
-                ImGui::Text("Transfer function: %s", to_str(neuron.transfer));
-            }
-            {
-                auto &neuron =  model.parameters.layers[model.lix].neurons[model.nix];
-                for (auto wix = 0u; wix < neuron.weights.size(); ++wix)
-                {
-                    float weight = neuron.weights[wix];
-                    ImGui::SliderFloat(cstr_("Weight ", wix), &weight, -3.0, 3.0);
-                    neuron.weights[wix] = weight;
-                }
-                {
-                    float bias = neuron.bias;
-                    ImGui::SliderFloat(cstr_("Bias"), &bias, -3.0, 3.0);
-                    neuron.bias = bias;
-                }
-            }
-            ImGui::Separator();
-
             nn_.goc();
             {
+                auto &simulator = goc_simulator_();
                 auto &wnd = io_.goc();
                 Transform t(wnd, 3,1);
                 io_.line(1, sf::Color(30, 30, 0), [&](auto &line){ line.point(t(-3.0,0.0)).point(t(3.0,0.0)); });
@@ -354,6 +343,7 @@ public:
         {
             auto &model = *model_;
             auto &dataset = *dataset_;
+            auto &simulator = goc_simulator_();
 
             if (!learn_)
                 learn_.emplace();
@@ -367,7 +357,7 @@ public:
                     const auto &y = r.fields[1];
                     std::copy(RANGE(x), model.states.begin()+model.input);
                     std::copy(RANGE(y), model.states.begin()+model.wanted_output);
-                    model.simulator->forward(model.states.data(), model.weights.data());
+                    simulator.forward(model.states.data(), model.weights.data());
                     data_ll += model.states[model.loglikelihood];
                 }
                 data_ll /= dataset.records.size();
@@ -423,14 +413,14 @@ public:
                 {
                     MSS(trainer.add(r.fields[0], r.fields[1]));
                 }
-                MSS(trainer.set(&model.simulator.value(), model.input, model.output));
+                MSS(trainer.set(&simulator, model.input, model.output));
                 trainer.add_fixed_input(model.bias, 1.0);
             }
 
             {
                 auto &trainer = *learn.trainer;
 
-                if (ImGui::RadioButton("No learning", learn.algo == Algo::NoLearn))
+                if (ImGui::RadioButton("No", learn.algo == Algo::NoLearn))
                     learn.algo = Algo::NoLearn;
                 ImGui::SameLine();
                 if (ImGui::RadioButton("Metropolis", learn.algo == Algo::Metropolis))
@@ -438,8 +428,7 @@ public:
                 ImGui::SameLine();
                 if (ImGui::RadioButton("Steepest descent", learn.algo == Algo::SteepestDescent))
                     learn.algo = Algo::SteepestDescent;
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Scaled conjugate gradient", learn.algo == Algo::SCG))
+                if (ImGui::RadioButton("Scaled Conjugate Gradient", learn.algo == Algo::SCG))
                     learn.algo = Algo::SCG;
                 ImGui::SameLine();
                 if (ImGui::RadioButton("ADAM", learn.algo == Algo::Adam))
@@ -457,7 +446,6 @@ public:
                             trainer.set_max_gradient_norm(10.0);
                             double newlp;
                             MSS(trainer.train_sd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.step));
-                            ImGui::Text("New LP: %f", (float)newlp);
                         }
                         break;
                     case Algo::SCG:
@@ -467,7 +455,6 @@ public:
                             model.init_scg = false;
                             double newlp;
                             MSS(trainer.train_scg(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, 10));
-                            ImGui::Text("New LP: %f", (float)newlp);
                         }
                         break;
                     case Algo::Adam:
@@ -480,20 +467,18 @@ public:
                                 adam.beta1 = 0.9;
                                 trainer.init_adam(adam);
                             }
-                            ImGui::Text("New LP: %f", (float)newlp);
                         }
                         break;
-                     case Algo::Metropolis:
+                    case Algo::Metropolis:
                         {
                             learn.step = std::max(learn.motion_stddev, 0.0001f);
                             ImGui::SliderFloat("Metropolis step", &learn.motion_stddev, 0.0001f, 0.1f);
 
                             double newlp;
                             MSS(trainer.train_metropolis(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.motion_stddev, 100));
-                            ImGui::Text("New LP: %f", (float)newlp);
                         }
                         break;
-               }
+                }
                 MSS(gubg::neural::copy_weights(model.parameters, model.weights));
             }
 
@@ -520,13 +505,15 @@ public:
         const bool is_hires = sf::VideoMode::getDesktopMode().width >= 3000;
         L(C(is_hires));
 
-        const auto vm = (is_hires ? sf::VideoMode(3000, 1500) : sf::VideoMode(1600, 800));
+        const auto vm = (is_hires ? sf::VideoMode(3000, 1500) : sf::VideoMode(1880, 1000));
         nn_.setup("Structure", vm.width/2, vm.height, 0.0, sf::Color(20, 0, 0), font_);
-        io_.setup("Input/Output", vm.width/2, vm.height, vm.width/2, sf::Color(0, 20, 0), font_);
+        io_.setup("Input/Output", vm.width-600, vm.height, 600.0, sf::Color(0, 20, 0), font_);
         sf::RenderWindow window(vm, "");
         window.setVerticalSyncEnabled(true);
         ImGui::SFML::Init(window);
         if (is_hires)
+            ImGui::GetIO().FontGlobalScale = 2.0;
+        else
             ImGui::GetIO().FontGlobalScale = 2.0;
 
         window.resetGLStates(); // call it if you only draw ImGui. Otherwise not needed.
@@ -617,6 +604,30 @@ private:
         bool init_scg = true;
     };
     std::optional<Model> model_;
+
+    gubg::neural::Simulator<double> &goc_simulator_()
+    {
+        if (!model_->simulator)
+        {
+            auto &model = *model_;
+            model.simulator.emplace();
+            auto &simulator = *model.simulator;
+
+            //Create the simulator, weights and states
+            {
+                gubg::neural::setup(simulator, model.structure, model.input, model.bias, model.output);
+                const auto nr_outputs = model.structure.nr_outputs();
+                model.wanted_output = simulator.add_external(nr_outputs);
+                std::vector<size_t> wanted_outputs(nr_outputs); std::iota(RANGE(wanted_outputs), model.wanted_output);
+                std::vector<size_t> actual_outputs(nr_outputs); std::iota(RANGE(actual_outputs), model.output);
+                simulator.add_loglikelihood(wanted_outputs, actual_outputs, model.loglikelihood, model.cost_stddev);
+                model.weights.resize(simulator.nr_weights());
+                model.states.resize(simulator.nr_states());
+                model.states[model.bias] = 1.0;
+            }
+        }
+        return *model_->simulator;
+    }
 
     std::filesystem::path data_fn_;
     std::optional<DataSet> dataset_;
