@@ -38,3 +38,9 @@ root.book("fri3d", fun(b){
         r.depends_on("/arduino/servo")
     })
 })
+root.book("domotica", fun(b){
+    b.recipe("bus", TargetType.Executable, fun(rcp){
+        rcp.add("domotica/bus", "**.[hc]pp")
+        rcp.depends_on("gubg/func");
+    })
+})

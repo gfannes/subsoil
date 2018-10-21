@@ -2,6 +2,11 @@ task :default do
     sh "rake -T"
 end
 
+desc "Clean"
+task :clean do
+    rm FileList.new("*.a")
+end
+
 desc "Install necessary packages for manjaro"
 task :setup do
     sh 'gem install jekyll'
@@ -105,4 +110,9 @@ namespace :fri3d do
             Arduino.program("#{output_dir}/fri3d.#{name}", arch: arch)
         end
     end
+end
+
+desc "Bus"
+task :bus do
+    cooker().generate(:ninja, "domotica/bus").ninja().run()
 end
