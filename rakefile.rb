@@ -86,7 +86,7 @@ namespace :fri3d do
     end
     desc "MLP test app"
     task :mlp do
-        cooker().option("release").generate(:ninja, "fri3d/mlp").ninja().run()
+        cooker().option("release").option("ctng.tuple", "i686-unknown-linux-gnu").generate(:ninja, "fri3d/mlp").ninja(1).run()
     end
     desc "Create MLPs"
     task :create_mlps do
