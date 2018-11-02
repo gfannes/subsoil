@@ -514,7 +514,7 @@ public:
         if (is_hires)
             ImGui::GetIO().FontGlobalScale = 2.0;
         else
-            ImGui::GetIO().FontGlobalScale = 2.0;
+            ImGui::GetIO().FontGlobalScale = 1.0;
 
         window.resetGLStates(); // call it if you only draw ImGui. Otherwise not needed.
 
