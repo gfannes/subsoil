@@ -70,7 +70,7 @@ public:
     template <typename Window>
     void draw(Window &wnd) const
     {
-        wnd.draw(vertices_.data(), vertices_.size(), sf::TriangleStrip);
+        wnd.draw(vertices_.data(), vertices_.size(), sf::TrianglesStrip);
     }
 
 private:
@@ -94,7 +94,7 @@ public:
     template <typename Window>
     void draw(Window &wnd) const
     {
-        wnd.draw(vertices_.data(), vertices_.size(), sf::TriangleStrip);
+        wnd.draw(vertices_.data(), vertices_.size(), sf::TrianglesStrip);
     }
 private:
     std::array<sf::Vertex, 4> vertices_;
