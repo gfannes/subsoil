@@ -14,6 +14,7 @@
 #include "gubg/std/optional.hpp"
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <list>
 #include <vector>
 #include <deque>
@@ -139,8 +140,11 @@ public:
                 ImGui::Text("Error: %s", str.c_str());
         }
 
-        if (gubg::imgui::select_file("MLP structure", structure_fn_))
+        const bool setup_default_structure = (true && structure_fn_.empty());
+        if (setup_default_structure || gubg::imgui::select_file("MLP structure", structure_fn_))
         {
+            if (setup_default_structure)
+                structure_fn_ = "/home/geert/subsoil/mlp.tanh_deep_network.naft";
             std::cout << "Selected structure file " << structure_fn_ << std::endl;
             learn_.reset();
             model_.reset();
@@ -300,8 +304,11 @@ public:
             }
         }
 
-        if (gubg::imgui::select_file("Dataset", data_fn_))
+        const bool setup_default_data = (true && data_fn_.empty());
+        if (setup_default_data || gubg::imgui::select_file("Dataset", data_fn_))
         {
+            if (setup_default_data)
+                data_fn_ = "/home/geert/subsoil/data.noisy_sine.naft";
             std::cout << "Selected data file " << data_fn_ << std::endl;
             learn_.reset();
             dataset_.reset();
@@ -348,9 +355,31 @@ public:
                 learn_.emplace();
             auto &learn = *learn_;
 
-            ImGui::Checkbox("Log data", &learn.do_log);
-            if (learn.do_log)
-                learn.oss.str("");
+            if (ImGui::Checkbox("Learn", &learn.do_learn))
+                if (learn.do_learn)
+                {
+                    if (!learn.output_fn.empty())
+                        learn.output.open(learn.output_fn);
+                }
+                else
+                {
+                    learn.output.close();
+                    learn.output_fn.clear();
+                }
+
+            //Specifying the output filename is only allowed when learning is pauzed
+            if (!learn.do_learn)
+            {
+                auto &output_fn = learn.output_fn;
+                const auto bufsize = 1024;
+                char buffer[bufsize];
+                const auto size = std::min<unsigned int>(output_fn.size(), bufsize-1);
+                output_fn.copy(buffer, size);
+                buffer[size] = '\0';
+                ImGui::SameLine();
+                if (ImGui::InputText("Output filename", buffer, bufsize))
+                    output_fn = buffer;
+            }
 
             double data_ll = 0.0;
             {
@@ -380,8 +409,7 @@ public:
                             for (const auto weight: weights)
                             {
                                 weights_ll += -0.5*(weight*weight)/(stddev*stddev);
-                                if (learn.do_log)
-                                    learn.oss << weight << ' ';
+                                learn.output << weight << ' ';
                             }
                             nr_weights += weights.size();
                         }
@@ -389,8 +417,7 @@ public:
                             const auto stddev = model.structure.neuron(lix, nix).bias_stddev;
                             const auto bias = model.parameters.neuron(lix, nix).bias;
                             weights_ll += -0.5*(bias*bias)/(stddev*stddev);
-                            if (learn.do_log)
-                                learn.oss << bias << ' ';
+                            learn.output << bias << ' ';
                             ++nr_weights;
                         }
                     }
@@ -400,13 +427,7 @@ public:
             }
             const auto total_ll = data_ll + weights_ll;
             ImGui::Text("total cost: %f", (float)-total_ll);
-            if (learn.do_log)
-            {
-                learn.oss << -data_ll << ' ';
-                learn.oss << -weights_ll << ' ';
-                learn.oss << -total_ll << ' ';
-                std::cout << learn.oss.str() << std::endl;
-            }
+            learn.output << -data_ll << ' ' << -weights_ll << ' ' << -total_ll << std::endl;
 
             {
                 auto &costs = learn.costs;
@@ -461,106 +482,110 @@ public:
                 if (ImGui::SliderInt("Exhaustive points to scan", &learn.exhaustive_nr, 2, 100))
                     learn.current_ixs.clear();
                 learn.exhaustive_nr = std::max(learn.exhaustive_nr, 2);
-                switch (learn.algo)
+
+                if (learn.do_learn)
                 {
-                    case Algo::NoLearn:
-                        break;
-                    case Algo::Exhaustive:
-                        if (learn.current_ixs.empty())
-                        {
-                            learn.current_ixs.resize(nr_weights);
-                        }
-                        else
-                        {
-                            if (learn.best_ixs.empty() || total_ll > learn.best_ll)
+                    switch (learn.algo)
+                    {
+                        case Algo::NoLearn:
+                            break;
+                        case Algo::Exhaustive:
+                            if (learn.current_ixs.empty())
                             {
-                                learn.best_ixs = learn.current_ixs;
-                                learn.best_ll = total_ll;
+                                learn.current_ixs.resize(nr_weights);
                             }
-
-                            //Increment current_ixs
-                            bool carry = true;
-                            for (auto &ix: learn.current_ixs)
+                            else
                             {
+                                if (learn.best_ixs.empty() || total_ll > learn.best_ll)
+                                {
+                                    learn.best_ixs = learn.current_ixs;
+                                    learn.best_ll = total_ll;
+                                }
+
+                                //Increment current_ixs
+                                bool carry = true;
+                                for (auto &ix: learn.current_ixs)
+                                {
+                                    if (carry)
+                                        ++ix;
+                                    carry = (ix >= learn.exhaustive_nr);
+                                    if (carry)
+                                        ix = 0;
+                                    else
+                                        break;
+                                }
+
+                                const auto d = (3.0 - -3.0)/(learn.exhaustive_nr-1);
+                                auto trans = [&](unsigned int ix){
+                                    return -3.0 + d*ix; 
+                                };
+
+                                auto set_weights = [&](const auto &ixs){
+                                    auto ix = ixs.begin();
+                                    for (auto lix = 0u; lix < model.structure.layers.size(); ++lix)
+                                        for (auto nix = 0u; nix < model.structure.layers[lix].neurons.size(); ++nix)
+                                        {
+                                            for (auto &weight: model.parameters.neuron(lix, nix).weights)
+                                                weight = trans(*ix++);
+                                            model.parameters.neuron(lix, nix).bias = trans(*ix++);
+                                        }
+                                };
+
+                                set_weights(learn.current_ixs);
+
                                 if (carry)
-                                    ++ix;
-                                carry = (ix >= learn.exhaustive_nr);
-                                if (carry)
-                                    ix = 0;
-                                else
-                                    break;
+                                {
+                                    learn.algo = Algo::NoLearn;
+                                    set_weights(learn.best_ixs);
+                                }
                             }
-
-                            const auto d = (3.0 - -3.0)/(learn.exhaustive_nr-1);
-                            auto trans = [&](unsigned int ix){
-                                return -3.0 + d*ix; 
-                            };
-
-                            auto set_weights = [&](const auto &ixs){
-                                auto ix = ixs.begin();
-                                for (auto lix = 0u; lix < model.structure.layers.size(); ++lix)
-                                    for (auto nix = 0u; nix < model.structure.layers[lix].neurons.size(); ++nix)
-                                    {
-                                        for (auto &weight: model.parameters.neuron(lix, nix).weights)
-                                            weight = trans(*ix++);
-                                        model.parameters.neuron(lix, nix).bias = trans(*ix++);
-                                    }
-                            };
-
-                            set_weights(learn.current_ixs);
-
-                            if (carry)
+                            for (auto ix: learn.current_ixs)
+                                std::cout << ix << ' ';
+                            std::cout << std::endl;
+                            break;
+                        case Algo::SteepestDescent:
                             {
-                                learn.algo = Algo::NoLearn;
-                                set_weights(learn.best_ixs);
-                            }
-                        }
-                        for (auto ix: learn.current_ixs)
-                            std::cout << ix << ' ';
-                        std::cout << std::endl;
-                        break;
-                    case Algo::SteepestDescent:
-                        {
-                            learn.sd_step = std::max(learn.sd_step, 0.0001f);
-                            ImGui::SliderFloat("Steepest descent step", &learn.sd_step, 0.0001, 0.3);
+                                learn.sd_step = std::max(learn.sd_step, 0.0001f);
+                                ImGui::SliderFloat("Steepest descent step", &learn.sd_step, 0.0001, 0.3);
 
-                            trainer.set_max_gradient_norm(10.0);
-                            double newlp;
-                            MSS(trainer.train_sd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.sd_step));
-                        }
-                        break;
-                    case Algo::SCG:
-                        {
-                            if (model.init_scg)
-                                trainer.init_scg();
-                            model.init_scg = false;
-                            double newlp;
-                            MSS(trainer.train_scg(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, 10));
-                        }
-                        break;
-                    case Algo::Adam:
-                        {
-                            double newlp;
-                            if (!trainer.train_adam(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev))
+                                trainer.set_max_gradient_norm(10.0);
+                                double newlp;
+                                MSS(trainer.train_sd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.sd_step));
+                            }
+                            break;
+                        case Algo::SCG:
                             {
-                                gubg::neural::Trainer<double>::AdamParams adam;
-                                adam.alpha = 0.01;
-                                adam.beta1 = 0.9;
-                                trainer.init_adam(adam);
+                                if (model.init_scg)
+                                    trainer.init_scg();
+                                model.init_scg = false;
+                                double newlp;
+                                MSS(trainer.train_scg(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, 10));
                             }
-                        }
-                        break;
-                    case Algo::Metropolis:
-                        {
-                            learn.motion_stddev = std::max(learn.motion_stddev, 0.0001f);
-                            ImGui::SliderFloat("Metropolis motion stddev", &learn.motion_stddev, 0.0001f, 0.1f);
+                            break;
+                        case Algo::Adam:
+                            {
+                                double newlp;
+                                if (!trainer.train_adam(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev))
+                                {
+                                    gubg::neural::Trainer<double>::AdamParams adam;
+                                    adam.alpha = 0.01;
+                                    adam.beta1 = 0.9;
+                                    trainer.init_adam(adam);
+                                }
+                            }
+                            break;
+                        case Algo::Metropolis:
+                            {
+                                learn.motion_stddev = std::max(learn.motion_stddev, 0.0001f);
+                                ImGui::SliderFloat("Metropolis motion stddev", &learn.motion_stddev, 0.0001f, 0.1f);
 
-                            double newlp;
-                            MSS(trainer.train_metropolis(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.motion_stddev, 100));
-                        }
-                        break;
+                                double newlp;
+                                MSS(trainer.train_metropolis(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.motion_stddev, 100));
+                            }
+                            break;
+                    }
+                    MSS(gubg::neural::copy_weights(model.parameters, model.weights));
                 }
-                MSS(gubg::neural::copy_weights(model.parameters, model.weights));
             }
 
         }
@@ -583,8 +608,13 @@ public:
             }
         }
 
-        const auto desktop_mode = sf::VideoMode::getDesktopMode();
+        auto desktop_mode = sf::VideoMode::getDesktopMode();
         L(C(desktop_mode.width)C(desktop_mode.height));
+        /* if (false) */
+        {
+            desktop_mode.width /= 2;
+            desktop_mode.height /= 2;
+        }
 
         sf::RenderWindow window(desktop_mode, "");
 
@@ -720,8 +750,9 @@ private:
     enum class Algo {NoLearn, Exhaustive, Metropolis, SteepestDescent, SCG, Adam};
     struct Learn
     {
-        bool do_log = false;
-        std::ostringstream oss;
+        bool do_learn = false;
+        std::string output_fn;
+        std::ofstream output;
         std::array<float, 1000> costs{};
         std::optional<gubg::neural::Trainer<double>> trainer;
         Algo algo = Algo::NoLearn;
