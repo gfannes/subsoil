@@ -261,7 +261,6 @@ public:
             }
             ImGui::Separator();
 
-            nn_.goc();
             {
                 auto &simulator = goc_simulator_();
                 auto &wnd = io_.goc();
@@ -584,19 +583,25 @@ public:
             }
         }
 
-        const bool is_hires = sf::VideoMode::getDesktopMode().width >= 3000;
-        L(C(is_hires));
+        const auto desktop_mode = sf::VideoMode::getDesktopMode();
+        L(C(desktop_mode.width)C(desktop_mode.height));
 
-        const auto vm = (is_hires ? sf::VideoMode(3000, 1500) : sf::VideoMode(1880, 1000));
-        nn_.setup("Structure", vm.width/2, vm.height, 0.0, sf::Color(20, 0, 0), font_);
-        io_.setup("Input/Output", vm.width-600, vm.height, 600.0, sf::Color(0, 20, 0), font_);
-        sf::RenderWindow window(vm, "");
+        sf::RenderWindow window(desktop_mode, "");
+
+        const auto window_size = window.getSize();
+        L(C(window_size.x)C(window_size.y));
+        io_.setup("", window_size.x, window_size.y, 0.0, sf::Color(0, 20, 0), font_);
+
         window.setVerticalSyncEnabled(true);
         ImGui::SFML::Init(window);
-        if (is_hires)
-            ImGui::GetIO().FontGlobalScale = 2.0;
-        else
-            ImGui::GetIO().FontGlobalScale = 1.0;
+
+        {
+            const bool is_hires = desktop_mode.width >= 3000;
+            if (is_hires)
+                ImGui::GetIO().FontGlobalScale = 2.0;
+            else
+                ImGui::GetIO().FontGlobalScale = 1.0;
+        }
 
         window.resetGLStates(); // call it if you only draw ImGui. Otherwise not needed.
 
@@ -625,8 +630,6 @@ public:
 
             const auto bg_color = (model_ ? sf::Color(0, 128, 128) : sf::Color(0, 0, 0));
             window.clear(bg_color);
-            if (nn_.valid)
-                nn_.draw(window);
             if (io_.valid)
                 io_.draw(window);
             ImGui::SFML::Render(window);
@@ -799,7 +802,6 @@ private:
             valid = false;
         }
     };
-    Pane nn_;
     Pane io_;
 
     std::optional<sf::Font> font_;
