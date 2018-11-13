@@ -1,0 +1,8 @@
+[udp hub]{
+}
+[protocol]{
+    [t2]
+    [commands]
+}
+[hardware]{
+}
