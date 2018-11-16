@@ -21,12 +21,17 @@ namespace laurot {
             {
                 L(C(byte, char));
                 if (byte == std::byte{'a'+id_})
-                    ep_->send(std::byte{0});
+                    send_ack_();
             }
             MSS_END();
         }
 
     private:
+        void send_ack_()
+        {
+            ep_->send(std::byte{0});
+        }
+
         const Id id_;
         gubg::rs485::Endpoint::Ptr ep_;
     };

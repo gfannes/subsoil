@@ -7,23 +7,36 @@
 
 namespace laurot { 
 
-    enum class PollState {Idle, WaitForAnswer, Timeout};
-    inline std::ostream &operator<<(std::ostream &os, PollState state)
-    {
-        switch (state)
+    namespace master { 
+        enum class State {Idle, WaitForAnswer, Timeout};
+
+        inline std::ostream &operator<<(std::ostream &os, State state)
         {
-#define l_case(name) case PollState::name: os << #name; break
-            l_case(Idle);
-            l_case(WaitForAnswer);
-            l_case(Timeout);
-            default: os << "Unknown state"; break;
+            switch (state)
+            {
+#define l_case(name) case State::name: os << #name; break
+                l_case(Idle);
+                l_case(WaitForAnswer);
+                l_case(Timeout);
+                default: os << "Unknown state"; break;
+            }
+            return os;
         }
-        return os;
-    }
+
+        struct SlaveInfo
+        {
+            Id id = -1;
+            bool is_online = false;
+            State state = State::Idle;
+            unsigned int ticks = 0;
+        };
+    } 
 
     class Master
     {
     public:
+        using State = master::State;
+
         Master(gubg::rs485::Endpoint::Ptr ep): ep_(ep)
         {
             for (auto i = 0u; i < slaves_.size(); ++i)
@@ -39,38 +52,30 @@ namespace laurot {
             for (std::byte byte; ep_->receive(byte);)
                 MSS(process_(byte));
 
-            for (const auto &slave: slaves_)
-            {
-                std::cout << C(slave.id)C(slave.is_online) << std::endl;
-            }
-
             MSS_END();
         }
 
     private:
-        struct SlaveInfo
+        void send_poll_message_(Id id)
         {
-            Id id = -1;
-            bool is_online = false;
-            PollState poll_state = PollState::Idle;
-            unsigned int ticks = 0;
-        };
-
+            ep_->send(std::byte{'a'+id});
+        }
+        //State machine
         bool process_tick_()
         {
             MSS_BEGIN(bool, "");
             auto &slave = slaves_[slave_ix_];
             ++slave.ticks;
             L(C(slave.id)C(slave.ticks));
-            switch (slave.poll_state)
+            switch (slave.state)
             {
-                case PollState::Idle:
-                    ep_->send(std::byte{'a'+slave_ix_});
-                    change_state_(PollState::WaitForAnswer);
+                case State::Idle:
+                    send_poll_message_(slave.id);
+                    change_state_(State::WaitForAnswer);
                     break;
-                case PollState::WaitForAnswer:
-                    if (slave.ticks > 3)
-                        change_state_(PollState::Timeout);
+                case State::WaitForAnswer:
+                    if (slave.ticks > timeout_ticks_)
+                        change_state_(State::Timeout);
                     break;
             }
             MSS_END();
@@ -80,48 +85,50 @@ namespace laurot {
             MSS_BEGIN(bool, "");
             auto &slave = slaves_[slave_ix_];
             ++slave.ticks;
-            switch (slave.poll_state)
+            switch (slave.state)
             {
-                case PollState::WaitForAnswer:
+                case State::WaitForAnswer:
                     slave.is_online = true;
-                    change_state_(PollState::Idle);
+                    change_state_(State::Idle);
                     break;
             }
             MSS_END();
         }
-
-        void change_state_(PollState new_state)
+        void change_state_(State new_state)
         {
             auto &slave = slaves_[slave_ix_];
-            if (slave.poll_state == new_state)
+            if (slave.state == new_state)
                 return;
 
             //Exit
-            switch (slave.poll_state)
+            switch (slave.state)
             {
             }
 
-            std::cout << "Changing state from " << slave.poll_state << " to " << new_state << std::endl;
-            slave.poll_state = new_state;
+            std::cout << "Changing state from " << slave.state << " to " << new_state << std::endl;
+            slave.state = new_state;
 
             //Enter
-            switch (slave.poll_state)
+            switch (slave.state)
             {
-                case PollState::Idle:
+                case State::Idle:
+                    //Switch to the next slave
                     ++slave_ix_;
                     slave_ix_ %= slaves_.size();
                     break;
-                case PollState::Timeout:
+                case State::Timeout:
                     std::cout << "TIMEOUT" << std::endl;
                     slave.is_online = false;
-                    change_state_(PollState::Idle);
+                    change_state_(State::Idle);
                     break;
             }
         }
 
+        const unsigned int timeout_ticks_ = 3;
+
         gubg::rs485::Endpoint::Ptr ep_;
 
-        std::array<SlaveInfo, 4> slaves_;
+        std::array<master::SlaveInfo, 4> slaves_;
         size_t slave_ix_ = 0;
     };
 
