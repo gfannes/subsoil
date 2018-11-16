@@ -21,7 +21,10 @@ namespace laurot {
             {
                 L(C(byte, char));
                 if (byte == std::byte{'a'+id_})
+                {
+                    L("I'm polled: send back an ACK");
                     send_ack_();
+                }
             }
             MSS_END();
         }
