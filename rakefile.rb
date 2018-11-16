@@ -116,3 +116,8 @@ desc "Bus"
 task :bus do
     cooker().generate(:ninja, "domotica/bus").ninja().run()
 end
+
+desc "Laurot"
+task :laurot do
+    cooker().generate(:ninja, "laurot/main").ninja().run("-s", 2)
+end

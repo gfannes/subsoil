@@ -44,3 +44,9 @@ root.book("domotica", fun(b){
         rcp.depends_on("gubg/func");
     })
 })
+root.book("laurot", fun(b){
+    b.recipe("main", TargetType.Executable, fun(rcp){
+        rcp.add("laurot/src", "laurot/**.[hc]pp")
+        rcp.depends_on("gubg/func");
+    })
+})
