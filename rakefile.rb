@@ -5,6 +5,7 @@ end
 desc "Clean"
 task :clean do
     rm FileList.new("*.a")
+    rm FileList.new("*.resp")
 end
 
 desc "Install necessary packages for manjaro"
@@ -117,7 +118,24 @@ task :bus do
     cooker().generate(:ninja, "domotica/bus").ninja().run()
 end
 
-desc "Laurot"
-task :laurot do
-    cooker().generate(:ninja, "laurot/main").ninja().run("-s", 2)
+namespace :laurot do
+    desc "Laurot slave"
+    task :slave do
+        uri, arch = "laurot/slave", "mega"
+        require("arduino")
+        gubg_arduino = "#{ENV["gubg"]}/gubg.arduino"
+        output_dir = "laurot/build/#{arch}"
+        cooker()
+            .recipes_fn(gubg_arduino, "recipes.chai")
+            .toolchain("gcc", "#{gubg_arduino}/cook/avr.chai")
+            .option(arch)
+            .output(output_dir)
+            .generate(:ninja, uri)
+            .ninja()
+        Arduino.program("#{output_dir}/#{uri.gsub("/",".")}", arch: arch)
+    end
+    desc "Laurot master"
+    task :master do
+        cooker().generate(:ninja, "laurot/main").ninja().run("-s", 2)
+    end
 end

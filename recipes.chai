@@ -1,41 +1,41 @@
 include("../gubg")
 root.book("subsoil", fun(b){
-    b.recipe("func", fun(r){
-        r.add("src", "**/*.hpp")
-        r.add("src", "**/*.cpp")
-        r.depends_on("gubg/func")
+    b.recipe("func", fun(rcp){
+        rcp.add("src", "**/*.hpp")
+        rcp.add("src", "**/*.cpp")
+        rcp.depends_on("gubg/func")
     })
 })
 root.book("toolbox", fun(b){
-    b.recipe("exe", TargetType.Executable, fun(r){
-        r.add("toolbox/src", "*.cpp")
-        r.depends_on("subsoil.func")
+    b.recipe("exe", TargetType.Executable, fun(rcp){
+        rcp.add("toolbox/src", "*.cpp")
+        rcp.depends_on("subsoil.func")
     })
 })
 root.book("fri3d", fun(b){
-    b.recipe("nn", TargetType.Executable, fun(r){
-        r.add("fri3d/2018/src", "nn/*.[hc]pp")
-        r.add("fri3d/2018/src", "nn.cpp")
-        r.depends_on("gubg/func")
+    b.recipe("nn", TargetType.Executable, fun(rcp){
+        rcp.add("fri3d/2018/src", "nn/*.[hc]pp")
+        rcp.add("fri3d/2018/src", "nn.cpp")
+        rcp.depends_on("gubg/func")
     })
-    b.recipe("mlp", TargetType.Executable, fun(r){
-        r.add("fri3d/2018/src", "mlp/*.[hc]pp")
-        r.add("fri3d/2018/src", "mlp.cpp")
-        r.depends_on("gubg/func")
+    b.recipe("mlp", TargetType.Executable, fun(rcp){
+        rcp.add("fri3d/2018/src", "mlp/*.[hc]pp")
+        rcp.add("fri3d/2018/src", "mlp.cpp")
+        rcp.depends_on("gubg/func")
     })
-    b.recipe("create_mlps", TargetType.Executable, fun(r){
-        r.add("fri3d/2018/src", "create_mlps.cpp")
-        r.depends_on("gubg/func")
+    b.recipe("create_mlps", TargetType.Executable, fun(rcp){
+        rcp.add("fri3d/2018/src", "create_mlps.cpp")
+        rcp.depends_on("gubg/func")
     })
-    b.recipe("boat", TargetType.Executable, fun(r){
-        r.add("fri3d/2018/src", "boat.cpp")
-        r.depends_on("/arduino/core")
-        r.depends_on("/arduino/servo")
+    b.recipe("boat", TargetType.Executable, fun(rcp){
+        rcp.add("fri3d/2018/src", "boat.cpp")
+        rcp.depends_on("/arduino/core")
+        rcp.depends_on("/arduino/servo")
     })
-    b.recipe("prop", TargetType.Executable, fun(r){
-        r.add("fri3d/2018/src", "prop.cpp")
-        r.depends_on("/arduino/core")
-        r.depends_on("/arduino/servo")
+    b.recipe("prop", TargetType.Executable, fun(rcp){
+        rcp.add("fri3d/2018/src", "prop.cpp")
+        rcp.depends_on("/arduino/core")
+        rcp.depends_on("/arduino/servo")
     })
 })
 root.book("domotica", fun(b){
@@ -45,7 +45,12 @@ root.book("domotica", fun(b){
     })
 })
 root.book("laurot", fun(b){
-    b.recipe("main", TargetType.Executable, fun(rcp){
+    b.recipe("slave", TargetType.Executable, fun(rcp){
+        rcp.add("laurot/src", "slave/**.[hc]pp")
+        rcp.depends_on("/arduino/core")
+        /* rcp.depends_on("gubg/func"); */
+    })
+    b.recipe("master", TargetType.Executable, fun(rcp){
         rcp.add("laurot/src", "laurot/**.[hc]pp")
         rcp.depends_on("gubg/func");
     })
