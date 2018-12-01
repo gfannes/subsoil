@@ -13,19 +13,38 @@ namespace  {
     class Blinker: public gubg::arduino::Timer_crtp<micros_t, Blinker>
     {
     public:
+        enum Mode {Fast, Pinkle, On};
+
         void init()
         {
             pinMode(13, OUTPUT);
             timer_run();
         }
+
+        void set_mode(Mode mode)
+        {
+            mode_ = mode;
+            start_timer(timeout_us_());
+        }
+
         void timer_run()
         {
             state_ = !state_;
             digitalWrite(13, state_);
-            start_timer(state_ ? 50000ul : 450000ul);
+            start_timer(timeout_us_());
         }
 
     private:
+        unsigned long timeout_us_()
+        {
+            switch (mode_)
+            {
+                case Mode::Fast: return 50000;
+                case Mode::Pinkle: return state_ ? 50000 : 450000;
+                case Mode::On: return state_ ? 50000 : 1;
+            }
+        }
+        Mode mode_ = Mode::Pinkle;
         bool state_ = false;
     };
 
@@ -50,6 +69,29 @@ void setup()
 enum class State {WaitUntilSent, SendNewMessage, Sending};
 State state = State::WaitUntilSent;
 
+void change_state(State new_state)
+{
+    if (new_state == state)
+        return;
+    //Exit
+    switch (state)
+    {
+    }
+    state = new_state;
+    //Enter
+    switch (state)
+    {
+        case State::WaitUntilSent:
+            blinker.set_mode(Blinker::On);
+            break;
+        case State::SendNewMessage:
+            break;
+        case State::Sending:
+            blinker.set_mode(Blinker::Fast);
+            break;
+    }
+}
+
 const char *message = nullptr;
 size_t offset, size;
 
@@ -60,22 +102,23 @@ void loop()
     rs485_endpoint.process(elapsed_time());
     blinker.process(elapsed_time());
 
+    if (false)
     switch (state)
     {
         case State::WaitUntilSent:
             if (!rs485_endpoint.is_sending())
-                state = State::SendNewMessage;
+                change_state(State::SendNewMessage);
             break;
         case State::SendNewMessage:
             message = "Hello world\n";
             size = 12;
             offset = 0;
-            state = State::Sending;
+            change_state(State::Sending);
             break;
         case State::Sending:
             rs485_endpoint.send(offset, message, size);
             if (offset == size)
-                state = State::WaitUntilSent;
+                change_state(State::WaitUntilSent);
             break;
     }
 
