@@ -120,8 +120,8 @@ end
 
 namespace :laurot do
     desc "Laurot slave"
-    task :slave do
-        uri, arch = "laurot/slave", "mega"
+    task :slave, :arch do |t,args|
+        uri, arch = "laurot/slave", args[:arch]||"mega"
         require("arduino")
         gubg_arduino = "#{ENV["gubg"]}/gubg.arduino"
         output_dir = "laurot/build/#{arch}"
