@@ -1,36 +1,8 @@
 #include "Arduino.h"
 #include "gubg/arduino/Elapsed.hpp"
 #include "gubg/arduino/Timer.hpp"
+#include "gubg/arduino/rs485/Endpoint.hpp"
 #include "gubg/platform.h"
-#include "gubg/mss.hpp"
-
-namespace gubg { namespace arduino { namespace rs485 { 
-
-    class Endpoint: public Timer_crtp<unsigned long, Endpoint>
-    {
-    public:
-        void init(HardwareSerial &hws, unsigned int tx_enable_pin)
-        {
-            hws_ = &hws;
-            tx_enable_pin_ = tx_enable_pin;
-
-            pinMode(tx_enable_pin_, OUTPUT);
-            digitalWrite(tx_enable_pin_, false);
-        }
-
-        bool process(unsigned long elapse)
-        {
-            MSS_BEGIN(bool);
-            MSS(!!hws_);
-            MSS_END();
-        }
-
-    private:
-        HardwareSerial *hws_ = nullptr;
-        unsigned int tx_enable_pin_;
-    };
-
-} } } 
 
 namespace  { 
 
@@ -62,8 +34,6 @@ namespace  {
     gubg::arduino::rs485::Endpoint rs485_endpoint;
 } 
 
-unsigned int write_buffer_size = 0;
-
 void setup()
 {
     Serial.println("Starting the APP");
@@ -71,21 +41,17 @@ void setup()
     elapsed_time.process(micros());
     blinker.init();
 #if GUBG_PLATFORM_ARDUINO_MEGA
-    rs485_endpoint.init(Serial1, 8);
+    rs485_endpoint.init(Serial1, 8, 9600, SERIAL_8N1);
 #endif
 
     Serial.begin(9600);
-#if GUBG_PLATFORM_ARDUINO_MEGA
-    /* Serial1.begin(9600, SERIAL_8O2); */
-    Serial1.begin(9600, SERIAL_8N2);
-
-    write_buffer_size = Serial1.availableForWrite();
-#endif
-
 }
 
-const auto bufsize = 10;
-char buffer[bufsize+1];
+enum class State {WaitUntilSent, SendNewMessage, Sending};
+State state = State::WaitUntilSent;
+
+const char *message = nullptr;
+size_t offset, size;
 
 void loop()
 {
@@ -93,6 +59,25 @@ void loop()
 
     rs485_endpoint.process(elapsed_time());
     blinker.process(elapsed_time());
+
+    switch (state)
+    {
+        case State::WaitUntilSent:
+            if (!rs485_endpoint.is_sending())
+                state = State::SendNewMessage;
+            break;
+        case State::SendNewMessage:
+            message = "Hello world\n";
+            size = 12;
+            offset = 0;
+            state = State::Sending;
+            break;
+        case State::Sending:
+            rs485_endpoint.send(offset, message, size);
+            if (offset == size)
+                state = State::WaitUntilSent;
+            break;
+    }
 
 #if GUBG_PLATFORM_ARDUINO_MEGA
 #if 0
