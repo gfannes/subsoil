@@ -102,7 +102,6 @@ void loop()
     rs485_endpoint.process(elapsed_time());
     blinker.process(elapsed_time());
 
-    if (false)
     switch (state)
     {
         case State::WaitUntilSent:
@@ -110,8 +109,13 @@ void loop()
                 change_state(State::SendNewMessage);
             break;
         case State::SendNewMessage:
+#if 0
             message = "Hello world\n";
             size = 12;
+#else
+            message = "\x55\x5a";
+            size = 2;
+#endif
             offset = 0;
             change_state(State::Sending);
             break;
