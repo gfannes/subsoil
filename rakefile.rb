@@ -51,15 +51,17 @@ task :post do
     end
 end
 
+def gubg_arduino()
+    require("arduino")
+    "#{ENV["gubg"]}/gubg.arduino"
+end
+
 namespace :wt6wd do
     desc "Build for arduino"
     task :build, :arch do |t,args|
         arch = args[:arch]
         archs = %w[uno mega lilypad]
         raise("Invalid arch \"#{arch}\", should be one of #{archs*' '}") unless archs.include?(arch)
-
-        require("arduino")
-        gubg_arduino = "#{ENV["gubg"]}/gubg.arduino"
 
         output_dir = "wt6wd/build/#{arch}"
         sh "cook -t gcc -t #{gubg_arduino}/cook/avr.chai -T #{arch} -g ninja -g naft -o #{output_dir} -f #{gubg_arduino} -f wt6wd /wt6wd/motor"
@@ -100,9 +102,6 @@ namespace :fri3d do
             archs = %w[uno mega lilypad]
             raise("Invalid arch \"#{arch}\", should be one of #{archs*' '}") unless archs.include?(arch)
 
-            require("arduino")
-            gubg_arduino = "#{ENV["gubg"]}/gubg.arduino"
-
             output_dir = "fri3d/2018/build/#{arch}"
             sh "cook -t gcc -t #{gubg_arduino}/cook/avr.chai -T #{arch} -g ninja -g naft -o #{output_dir} -f #{gubg_arduino} -f ./ /fri3d/#{name}"
             # sh "ninja -f #{output_dir}/build.ninja -t clean"
@@ -111,6 +110,22 @@ namespace :fri3d do
             Arduino.program("#{output_dir}/fri3d.#{name}", arch: arch)
         end
     end
+end
+
+desc "PoC"
+task :poc, [:filename, :arch] do |t,args|
+    filename = args[:filename]
+    ENV["subsoil_poc_filename"] = filename
+    uri, arch = "poc/exe", args[:arch]||"mega"
+    output_dir = "poc/build/#{filename}/#{arch}"
+    cooker()
+        .recipes_fn(gubg_arduino, "recipes.chai")
+        .toolchain("gcc", "#{gubg_arduino}/cook/avr.chai")
+        .option(arch)
+        .output(output_dir)
+        .generate(:ninja, uri)
+        .ninja()
+    Arduino.program("#{output_dir}/#{uri.gsub("/",".")}", arch: arch)
 end
 
 desc "Bus"
@@ -122,8 +137,6 @@ namespace :laurot do
     desc "Laurot slave"
     task :slave, :arch do |t,args|
         uri, arch = "laurot/slave", args[:arch]||"mega"
-        require("arduino")
-        gubg_arduino = "#{ENV["gubg"]}/gubg.arduino"
         output_dir = "laurot/build/#{arch}"
         cooker()
             .recipes_fn(gubg_arduino, "recipes.chai")

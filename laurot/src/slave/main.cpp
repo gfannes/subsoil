@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "gubg/arduino/Elapsed.hpp"
 #include "gubg/arduino/Timer.hpp"
+#include "gubg/arduino/Pin.hpp"
 #include "gubg/arduino/rs485/Endpoint.hpp"
 #include "gubg/platform.h"
 
@@ -17,7 +18,6 @@ namespace  {
 
         void init()
         {
-            pinMode(13, OUTPUT);
             timer_run();
         }
 
@@ -29,8 +29,7 @@ namespace  {
 
         void timer_run()
         {
-            state_ = !state_;
-            digitalWrite(13, state_);
+            pin_.toggle();
             start_timer(timeout_us_());
         }
 
@@ -40,12 +39,12 @@ namespace  {
             switch (mode_)
             {
                 case Mode::Fast: return 50000;
-                case Mode::Pinkle: return state_ ? 50000 : 450000;
-                case Mode::On: return state_ ? 50000 : 1;
+                case Mode::Pinkle: return pin_.is_output(true) ? 50000 : 450000;
+                case Mode::On: return pin_.is_output(true) ? 50000 : 1;
             }
         }
         Mode mode_ = Mode::Pinkle;
-        bool state_ = false;
+        gubg::arduino::Pin pin_{13};
     };
 
     Blinker blinker;
