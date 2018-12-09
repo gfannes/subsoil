@@ -7,30 +7,32 @@
 
 namespace  { 
 
-    using micros_t = decltype(micros());
+    using Micros = decltype(micros());
 
-    gubg::arduino::Elapsed<micros_t> elapsed_time;
+    gubg::arduino::Elapsed<Micros> elapsed_time;
 
-    class Blinker: public gubg::arduino::Timer_crtp<micros_t, Blinker>
+    class Blinker
     {
     public:
         enum Mode {Fast, Pinkle, On};
 
         void init()
         {
-            timer_run();
+            toggle_timer_.start(timeout_us_());
         }
 
         void set_mode(Mode mode)
         {
             mode_ = mode;
-            start_timer(timeout_us_());
+            toggle_timer_.start(timeout_us_());
         }
 
-        void timer_run()
+        void process(unsigned long elapsed)
         {
-            pin_.toggle();
-            start_timer(timeout_us_());
+            toggle_timer_.process(elapsed, [&](){
+                    pin_.toggle();
+                    toggle_timer_.start(timeout_us_());
+                    });
         }
 
     private:
@@ -43,8 +45,10 @@ namespace  {
                 case Mode::On: return pin_.is_output(true) ? 50000 : 1;
             }
         }
+
         Mode mode_ = Mode::Pinkle;
         gubg::arduino::Pin pin_{13};
+        gubg::arduino::Timer<Micros> toggle_timer_;
     };
 
     Blinker blinker;
@@ -98,7 +102,7 @@ void loop()
 {
     elapsed_time.process(micros());
 
-    rs485_endpoint.process(elapsed_time());
+    rs485_endpoint.process();
     blinker.process(elapsed_time());
 
     switch (state)

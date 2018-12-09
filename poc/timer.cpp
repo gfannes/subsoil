@@ -11,12 +11,12 @@ namespace  {
     Elapsed elapsed;
 
     gubg::arduino::Pin pin13{13};
-    gubg::arduino::RelativeTimer<Micros> toggle_led13;
+    gubg::arduino::Timer<Micros> toggle_led13;
 } 
 
 void setup()
 {
-    toggle_led13.start_timer(100000ul);
+    toggle_led13.start(100000ul);
 }
 
 void loop()
@@ -25,6 +25,6 @@ void loop()
 
     toggle_led13.process(elapsed(), [&](){
             pin13.toggle();
-            toggle_led13.start_timer(100000ul);
+            toggle_led13.start(100000ul);
             });
 }
