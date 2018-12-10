@@ -44,6 +44,7 @@ root.book("poc", fun(b){
         rcp.depends_on("/arduino/core")
         rcp.depends_on("gubg/arduino")
         rcp.depends_on("gubg/std/func")
+        rcp.depends_on("gubg/io/hpp")
         /* rcp.depends_on("gubg/func"); */
     })
 })
