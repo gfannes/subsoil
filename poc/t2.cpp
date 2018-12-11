@@ -2,6 +2,8 @@
 #include "gubg/string/Buffer.hpp"
 #include "gubg/t2/Builder.hpp"
 #include "gubg/t2/Parser.hpp"
+#include "gubg/t2/Segmenter.hpp"
+#include "gubg/t2/Range.hpp"
 #include "gubg/std/array.hpp"
 #include "gubg/Range_macro.hpp"
 
@@ -23,7 +25,7 @@ namespace my {
             S("attr");L(key);L(value);
         }
         template <typename Level>
-        t2_close(Level level)
+        void t2_close(Level level)
         {
             S("close");L(level);
         }
