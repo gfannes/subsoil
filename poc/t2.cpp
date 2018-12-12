@@ -6,6 +6,7 @@
 #include "gubg/t2/Range.hpp"
 #include "gubg/std/array.hpp"
 #include "gubg/Range_macro.hpp"
+#include "gubg/log.hpp"
 
 namespace my { 
     using String = gubg::string::Buffer<char>;
@@ -17,17 +18,20 @@ namespace my {
         template <typename Tag, typename Level>
         void t2_open(Tag tag, Level level)
         {
-            S("open");L(tag);L(level);
+            TAG("open")ATTR(tag)
+            {
+                TAG("open2") ATTR(level)
+            }
         }
         template <typename Key, typename Value>
         void t2_attr(Key key, Value value)
         {
-            S("attr");L(key);L(value);
+            TAG("attr")ATTR(key)ATTR(value)
         }
         template <typename Level>
         void t2_close(Level level)
         {
-            S("close");L(level);
+            TAG("close")ATTR(level)
         }
     private:
     };
@@ -49,12 +53,14 @@ void loop()
         n.attr(3,4);
     }
 
-    my::Parser parser;
-    Serial.print("t2:");
-    for (auto i = 0; i < string.size(); ++i)
     {
-        const auto ch = string[i];
-        Serial.print("Processing ");Serial.println(ch, HEX);
-        parser.process(ch);
+        my::Parser parser;
+        TAG("parse")ATTR(string.size());
+        for (auto i = 0; i < string.size(); ++i)
+        {
+            const auto ch = string[i];
+            TAG("iter")ATTR(ch)ATTR(i);
+            parser.process(ch);
+        }
     }
 }
