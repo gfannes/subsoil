@@ -7,6 +7,7 @@
 #include "gubg/serial/Endpoint.hpp"
 #include "gubg/t2/Builder.hpp"
 #include "gubg/t2/Segmenter.hpp"
+#include "gubg/t2/Range.hpp"
 #include "gubg/string/Std.hpp"
 #include "gubg/mss.hpp"
 #include <chrono>
@@ -40,20 +41,34 @@ namespace app {
                 case State::SendingQuestion:
                     MSS(rs485_ep_.send(out_offset_, out_msg_str_.data(), out_msg_str_.size()));
                     if (out_offset_ == out_msg_str_.size())
-                        change_state_(State::WaitForAnswer);
+                        return change_state_(State::WaitForAnswer);
                     break;
                 case State::WaitForAnswer:
                     if (Clock::now() > timeout_)
-                        change_state_(State::Timeout);
+                        return error_("Timeout");
                     std::array<gubg::t2::Byte, 1024> buffer;
                     size_t offset = 0;
                     MSS(rs485_ep_.receive(offset, buffer.data(), buffer.size()));
                     L(C(offset));
                     auto lamdba = [&](gubg::t2::Byte *begin, gubg::t2::Byte *end)
                     {
+                        MSS_BEGIN(bool, "");
                         L("Received t2 message of size " << end-begin);
+                        gubg::t2::Range range{begin, end};
+                        MSS(range.pop_tag(laurot::id::Answer), error_("Expected an answer"));
+                        gubg::t2::Data key, value;
+                        while (range.pop_attr(key, value))
+                        {
+                            switch (key)
+                            {
+                                case laurot::id::Id:
+                                    MSS(value == message_id_, error_("Message id mismatch"));
+                                    break;
+                            }
+                        }
                         change_state_(State::Idle);
-                        return true;
+                        offset = 0;
+                        MSS_END();
                     };
                     for (auto i = 0u; i < offset; ++i)
                         segmenter_.process(buffer[i], lamdba);
@@ -64,6 +79,13 @@ namespace app {
 
     private:
         using Clock = std::chrono::steady_clock;
+
+        const char * error_msg_;
+        bool error_(const char *msg)
+        {
+            error_msg_ = msg;
+            return change_state_(State::Error);
+        }
 
         bool prepare_out_msg_()
         {
@@ -97,12 +119,12 @@ namespace app {
             MSS_END();
         }
 
-        enum class State {Idle, SendingQuestion, WaitForAnswer, Timeout};
+        enum class State {Idle, SendingQuestion, WaitForAnswer, Error,};
         State state_ = State::Idle;
-        void change_state_(State new_state)
+        bool change_state_(State new_state)
         {
             if (state_ == new_state)
-                return;
+                return false;
 
             //Exit
             switch (state_)
@@ -120,11 +142,13 @@ namespace app {
                 case State::WaitForAnswer:
                     timeout_ = Clock::now()+std::chrono::milliseconds(1000);
                     break;
-                case State::Timeout:
-                    std::cout << "Timeout deteced" << std::endl;
+                case State::Error:
+                    std::cout << "Error: " << error_msg_ << std::endl;
                     change_state_(State::Idle);
                     break;
             }
+
+            return true;
         }
 
         gubg::serial::Endpoint rs485_ep_;

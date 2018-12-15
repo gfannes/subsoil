@@ -39,7 +39,7 @@ namespace app {
 
                 MSS(call_center_.process());
                 MSS(call_center_.process());
-                for (auto i = 0u; i < 20; ++i)
+                for (auto i = 0u; i < 3; ++i)
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(20));
                     MSS(call_center_.process());
