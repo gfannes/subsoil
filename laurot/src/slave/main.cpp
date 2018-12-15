@@ -1,159 +1,167 @@
 #include "Arduino.h"
-#include "gubg/arduino/Elapsed.hpp"
-#include "gubg/arduino/Timer.hpp"
-#include "gubg/arduino/Pin.hpp"
+#include "laurot/Id.hpp"
 #include "gubg/arduino/rs485/Endpoint.hpp"
-#include "gubg/platform.h"
+#include "gubg/string/Buffer.hpp"
+#include "gubg/t2/Builder.hpp"
+#include "gubg/t2/Parser.hpp"
+#include "gubg/t2/Segmenter.hpp"
+#include "gubg/t2/Range.hpp"
+#include "gubg/std/array.hpp"
+#include "gubg/Range_macro.hpp"
 
-namespace  { 
+#define gubg_no_log 1
+#include "gubg/log.hpp"
 
-    using Micros = decltype(micros());
+namespace my { 
+    using String = gubg::string::Buffer<char>;
+    using T2Doc = gubg::t2::Document<String>;
 
-    gubg::arduino::Elapsed<Micros> elapsed_time;
-
-    class Blinker
+    class Parser: public gubg::t2::Parser_crtp<Parser>
     {
     public:
-        enum Mode {Fast, Pinkle, On};
+        laurot::id::Type tag1;
+        laurot::id::Type message_id;
+        laurot::id::Type to;
 
-        void init()
+        bool ready() const { return state_ == 2; }
+        void reset() {state_ = 0;}
+
+        template <typename Tag, typename Level>
+        void t2_open(Tag tag, Level lvl)
         {
-            toggle_timer_.start(timeout_us_());
+            TAG("open")ATTR(tag)ATTR(lvl)
+            level_ = lvl;
+            switch (level_)
+            {
+                case 0:
+                    //Start of message
+                    break;
+                case 1:
+                    state_ = 1;
+                    tag1 = tag;
+                    break;
+            }
         }
-
-        void set_mode(Mode mode)
+        template <typename Key, typename Value>
+        void t2_attr(Key key, Value value)
         {
-            mode_ = mode;
-            toggle_timer_.start(timeout_us_());
+            TAG("attr")ATTR(key)ATTR(value)
+            switch (level_)
+            {
+                case 1:
+                    switch (key)
+                    {
+                        case laurot::id::Id: message_id = value; break;
+                        case laurot::id::To: to         = value; break;
+                    }
+                    break;
+            }
         }
-
-        void process(unsigned long elapsed)
+        template <typename Level>
+        void t2_close(Level lvl)
         {
-            toggle_timer_.process(elapsed, [&](){
-                    pin_.toggle();
-                    toggle_timer_.start(timeout_us_());
-                    });
+            TAG("close")ATTR(lvl)
+            switch (lvl)
+            {
+                case 0:
+                    //End of message
+                    if (state_ == 1)
+                        state_ = 2;
+                    break;
+            }
+            level_ = --lvl;
         }
 
     private:
-        unsigned long timeout_us_()
+        int level_ = -1;
+        unsigned int state_ = 0;
+    };
+    Parser parser;
+}
+
+namespace {
+    gubg::arduino::rs485::Endpoint ep;
+
+    const auto BufferSize = 16;
+    std::array<char, BufferSize> buffer;
+    size_t buffer_offset = 0;
+    size_t buffer_size = 0;
+
+    enum class State {Receiving, Sending};
+    State state_ = State::Receiving;
+    void change_state_(State new_state)
+    {
+        if (state_ == new_state)
+            return;
+
+        TAG("change_state_")ATTR((int)state_)ATTR((int)new_state)
+
+        //Exit
+        switch (state_)
         {
-            switch (mode_)
-            {
-                case Mode::Fast: return 50000;
-                case Mode::Pinkle: return pin_.is_output(true) ? 50000 : 450000;
-                case Mode::On: return pin_.is_output(true) ? 50000 : 1;
-            }
         }
 
-        Mode mode_ = Mode::Pinkle;
-        gubg::arduino::Pin pin_{13};
-        gubg::arduino::Timer<Micros> toggle_timer_;
-    };
+        state_ = new_state;
 
-    Blinker blinker;
-
-    gubg::arduino::rs485::Endpoint rs485_endpoint;
+        //Enter
+        switch (state_)
+        {
+        }
+    }
 } 
 
 void setup()
 {
-    Serial.println("Starting the APP");
-
-    elapsed_time.process(micros());
-    blinker.init();
-#if GUBG_PLATFORM_ARDUINO_MEGA
-    rs485_endpoint.init(Serial1, 8, 9600, SERIAL_8N1);
-#endif
+    ep.init(Serial1, 8, 9600, SERIAL_8N1);
 
     Serial.begin(9600);
 }
 
-enum class State {WaitUntilSent, SendNewMessage, Sending};
-State state = State::WaitUntilSent;
-
-void change_state(State new_state)
-{
-    if (new_state == state)
-        return;
-    //Exit
-    switch (state)
-    {
-    }
-    state = new_state;
-    //Enter
-    switch (state)
-    {
-        case State::WaitUntilSent:
-            blinker.set_mode(Blinker::On);
-            break;
-        case State::SendNewMessage:
-            break;
-        case State::Sending:
-            blinker.set_mode(Blinker::Fast);
-            break;
-    }
-}
-
-const char *message = nullptr;
-size_t offset, size;
-
 void loop()
 {
-    elapsed_time.process(micros());
+    ep.process();
 
-    rs485_endpoint.process();
-    blinker.process(elapsed_time());
-
-    switch (state)
+    switch (state_)
     {
-        case State::WaitUntilSent:
-            if (!rs485_endpoint.is_sending())
-                change_state(State::SendNewMessage);
+        case State::Receiving:
+            {
+                buffer_offset = 0;
+                ep.receive(buffer_offset, buffer.data(), BufferSize);
+
+                for (auto i = 0u; i < buffer_offset; ++i)
+                {
+                    TAG("ch")ATTR(i)
+                    my::parser.process(buffer[i]);
+                }
+
+                if (my::parser.ready())
+                {
+                    TAG("received a message")
+
+                    my::String string{RANGE(buffer)};
+                    {
+                        my::T2Doc doc{string};
+                        auto answer = doc.tag(laurot::id::Answer);
+                        answer.attr(laurot::id::Id, my::parser.message_id);
+                    }
+                    buffer_offset = 0;
+                    buffer_size = string.size();
+                    ATTR(buffer_size)
+
+                    my::parser.reset();
+
+                    change_state_(State::Sending);
+                }
+            }
             break;
-        case State::SendNewMessage:
-#if 0
-            message = "Hello world\n";
-            size = 12;
-#else
-            message = "\x55\x5a";
-            size = 2;
-#endif
-            offset = 0;
-            change_state(State::Sending);
-            break;
+
         case State::Sending:
-            rs485_endpoint.send(offset, message, size);
-            if (offset == size)
-                change_state(State::WaitUntilSent);
+            {
+                ep.send(buffer_offset, buffer.data(), buffer_size);
+                if (!ep.is_sending())
+                    change_state_(State::Receiving);
+            }
             break;
     }
 
-#if GUBG_PLATFORM_ARDUINO_MEGA
-#if 0
-    const auto available_for_write = Serial1.availableForWrite();
-    Serial.print(available_for_write);
-    Serial.print("\r\n");
-    const auto is_writing = (write_buffer_size > available_for_write);
-    delay(2);
-    digitalWrite(8, is_writing);
-
-    if (!is_writing)
-    {
-        auto ix = 0u;
-        for (; ix < bufsize && Serial1.available(); ++ix)
-        {
-            buffer[ix] = Serial1.read();
-            delay(1);
-        }
-        buffer[ix] = 0;
-        if (ix > 0)
-        {
-            digitalWrite(8, HIGH);
-            for (auto i = 0u; i < ix; ++i)
-                Serial1.write(buffer[i]+1);
-        }
-    }
-#endif
-#endif
 }

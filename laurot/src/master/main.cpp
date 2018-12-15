@@ -1,13 +1,13 @@
-#include "laurot/App.hpp"
+#include "app/App.hpp"
 #include "gubg/mss.hpp"
 #include <iostream>
 
-namespace laurot { 
+namespace my { 
     bool main(int argc, const char **argv)
     {
         MSS_BEGIN(bool);
 
-        App app;
+        app::App app;
         MSS(app.process(argc, argv));
         MSS(app.run());
 
@@ -17,7 +17,7 @@ namespace laurot {
 
 int main(int argc, const char **argv)
 {
-    if (!laurot::main(argc, argv))
+    if (!my::main(argc, argv))
     {
         std::cout << "Error: main failed" << std::endl;
         return -1;

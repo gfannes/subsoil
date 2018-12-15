@@ -149,6 +149,6 @@ namespace :laurot do
     end
     desc "Laurot master"
     task :master do
-        cooker().generate(:ninja, "laurot/main").ninja().run("-s", 2)
+        cooker().generate(:ninja, "laurot/master").ninja().run("-t", "/dev/ttyUSB0", "-b", 9600, "-s", 1)
     end
 end
