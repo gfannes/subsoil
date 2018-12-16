@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "laurot/Id.hpp"
 #include "gubg/arduino/rs485/Endpoint.hpp"
+#include "gubg/arduino/Elapsed.hpp"
 #include "gubg/string/Buffer.hpp"
 #include "gubg/t2/Builder.hpp"
 #include "gubg/t2/Parser.hpp"
@@ -87,8 +88,15 @@ namespace {
     size_t buffer_offset = 0;
     size_t buffer_size = 0;
 
-    enum class State {Receiving, Sending};
-    State state_ = State::Receiving;
+    using Micros = decltype(micros());
+    gubg::arduino::Elapsed<Micros> elapsed;
+    gubg::arduino::Timer<Micros> blink_timer;
+    gubg::arduino::Pin blink_pin{13};
+    std::array<Micros, 2> blink_duration;
+
+    enum class State {Init, Idle, Receiving, Sending, Error};
+    State state_ = State::Init;
+
     void change_state_(State new_state)
     {
         if (state_ == new_state)
@@ -106,6 +114,18 @@ namespace {
         //Enter
         switch (state_)
         {
+            case State::Idle:
+                blink_duration[0] = 470000u;
+                blink_duration[1] =  30000u;
+                break;
+            case State::Receiving:
+                break;
+            case State::Sending:
+                break;
+            case State::Error:
+                blink_duration[0] = 30000u;
+                blink_duration[1] = 30000u;
+                break;
         }
     }
 } 
@@ -113,16 +133,30 @@ namespace {
 void setup()
 {
     ep.init(Serial1, 8, 9600, SERIAL_8N1);
+    blink_timer.start(100000u);
 
     Serial.begin(9600);
 }
 
 void loop()
 {
+    elapsed.process(micros());
+
+    blink_timer.process(elapsed(), [&](){
+            blink_pin.toggle();
+            blink_timer.add(blink_duration[blink_pin.is_output(true)]);
+            });
+
     ep.process();
 
     switch (state_)
     {
+        case State::Init:
+            change_state_(State::Idle);
+            break;
+        case State::Idle:
+            change_state_(State::Receiving);
+            break;
         case State::Receiving:
             {
                 buffer_offset = 0;
@@ -136,21 +170,39 @@ void loop()
 
                 if (my::parser.ready())
                 {
-                    TAG("received a message")
-
-                    my::String string{RANGE(buffer)};
+                    switch (my::parser.tag1)
                     {
-                        my::T2Doc doc{string};
-                        auto answer = doc.tag(laurot::id::Answer);
-                        answer.attr(laurot::id::Id, my::parser.message_id);
+                        case laurot::id::Question:
+                            {
+                                TAG("received a question")
+                                my::String string{RANGE(buffer)};
+                                {
+                                    my::T2Doc doc{string};
+                                    auto answer = doc.tag(laurot::id::Answer);
+                                    answer.attr(laurot::id::Id, my::parser.message_id);
+                                }
+                                buffer_offset = 0;
+                                buffer_size = string.size();
+                                ATTR(buffer_size)
+
+                                my::parser.reset();
+
+                                change_state_(State::Sending);
+                            }
+                            break;
+                        case laurot::id::Understood:
+                            {
+                                TAG("received an understood")
+                                change_state_(State::Idle);
+                            }
+                            break;
+                        default:
+                            {
+                                TAG("UNKNOWN TAG RECEIVED")ATTR(my::parser.tag1)
+                                change_state_(State::Error);
+                            }
+                            break;
                     }
-                    buffer_offset = 0;
-                    buffer_size = string.size();
-                    ATTR(buffer_size)
-
-                    my::parser.reset();
-
-                    change_state_(State::Sending);
                 }
             }
             break;
@@ -159,8 +211,12 @@ void loop()
             {
                 ep.send(buffer_offset, buffer.data(), buffer_size);
                 if (!ep.is_sending())
-                    change_state_(State::Receiving);
+                    change_state_(State::Idle);
             }
+            break;
+
+        case State::Error:
+            /* change_state_(State::Idle); */
             break;
     }
 

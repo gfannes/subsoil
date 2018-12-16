@@ -36,42 +36,57 @@ namespace app {
             switch (state_)
             {
                 case State::Idle:
-                    MSS(prepare_out_msg_());
+                    {
+                        MSS(change_state_(State::SendQuestion));
+                    }
                     break;
-                case State::SendingQuestion:
-                    MSS(rs485_ep_.send(out_offset_, out_msg_str_.data(), out_msg_str_.size()));
-                    if (out_offset_ == out_msg_str_.size())
-                        return change_state_(State::WaitForAnswer);
+                case State::SendQuestion:
+                    {
+                        MSS(rs485_ep_.send(out_offset_, out_msg_str_.data(), out_msg_str_.size()));
+                        if (out_offset_ == out_msg_str_.size())
+                            //Message is sent
+                            return change_state_(State::WaitForAnswer);
+                    }
                     break;
                 case State::WaitForAnswer:
-                    if (Clock::now() > timeout_)
-                        return error_("Timeout");
-                    std::array<gubg::t2::Byte, 1024> buffer;
-                    size_t offset = 0;
-                    MSS(rs485_ep_.receive(offset, buffer.data(), buffer.size()));
-                    L(C(offset));
-                    auto lamdba = [&](gubg::t2::Byte *begin, gubg::t2::Byte *end)
                     {
-                        MSS_BEGIN(bool, "");
-                        L("Received t2 message of size " << end-begin);
-                        gubg::t2::Range range{begin, end};
-                        MSS(range.pop_tag(laurot::id::Answer), error_("Expected an answer"));
-                        gubg::t2::Data key, value;
-                        while (range.pop_attr(key, value))
+                        if (Clock::now() > timeout_)
+                            return error_("Timeout");
+                        std::array<gubg::t2::Byte, 1024> buffer;
+                        size_t offset = 0;
+                        MSS(rs485_ep_.receive(offset, buffer.data(), buffer.size()));
+                        L(C(offset));
+                        auto lamdba = [&](gubg::t2::Byte *begin, gubg::t2::Byte *end)
                         {
-                            switch (key)
+                            MSS_BEGIN(bool, "");
+                            L("Received t2 message of size " << end-begin);
+                            gubg::t2::Range range{begin, end};
+                            MSS(range.pop_tag(laurot::id::Answer), error_("Expected an answer"));
+                            gubg::t2::Data key, value;
+                            while (range.pop_attr(key, value))
                             {
-                                case laurot::id::Id:
-                                    MSS(value == message_id_, error_("Message id mismatch"));
-                                    break;
+                                switch (key)
+                                {
+                                    case laurot::id::Id:
+                                        MSS(value == message_id_, error_("Message id mismatch"));
+                                        break;
+                                }
                             }
-                        }
-                        change_state_(State::Idle);
-                        offset = 0;
-                        MSS_END();
-                    };
-                    for (auto i = 0u; i < offset; ++i)
-                        segmenter_.process(buffer[i], lamdba);
+                            change_state_(State::SendUnderstood);
+                            offset = 0;
+                            MSS_END();
+                        };
+                        for (auto i = 0u; i < offset; ++i)
+                            segmenter_.process(buffer[i], lamdba);
+                    }
+                    break;
+                case State::SendUnderstood:
+                    {
+                        MSS(rs485_ep_.send(out_offset_, out_msg_str_.data(), out_msg_str_.size()));
+                        if (out_offset_ == out_msg_str_.size())
+                            //Message is sent
+                            return change_state_(State::Idle);
+                    }
                     break;
             }
             MSS_END();
@@ -87,7 +102,7 @@ namespace app {
             return change_state_(State::Error);
         }
 
-        bool prepare_out_msg_()
+        bool prepare_question_()
         {
             MSS_BEGIN(bool, "");
 
@@ -98,33 +113,51 @@ namespace app {
             const auto msg = out_->front();
             out_->pop();
 
+            message_id_ = (message_id_+1)%64;
+
             out_msg_str_.resize(0);
             T2Doc doc{out_msg_};
-
-            message_id_ = (message_id_+1)%64;
 
             if (false) {}
             else if (msg.poll)
             {
                 const auto &poll = *msg.poll;
                 auto question = doc.tag(laurot::id::Question);
-                question.attr(laurot::id::To, poll.to);
+                to_ = poll.to;
+                question.attr(laurot::id::To, to_);
                 question.attr(laurot::id::Id, message_id_);
             }
 
             L(out_msg_str_.size());
 
-            change_state_(State::SendingQuestion);
+            MSS_END();
+        }
+        bool prepare_understood_()
+        {
+            MSS_BEGIN(bool);
+
+            out_msg_str_.resize(0);
+            T2Doc doc{out_msg_};
+
+            {
+                auto understood = doc.tag(laurot::id::Understood);
+                understood.attr(laurot::id::To, to_);
+                understood.attr(laurot::id::Id, message_id_);
+            }
+
+            L(out_msg_str_.size());
 
             MSS_END();
         }
 
-        enum class State {Idle, SendingQuestion, WaitForAnswer, Error,};
+        enum class State {Idle, SendQuestion, WaitForAnswer, SendUnderstood, Error,};
         State state_ = State::Idle;
         bool change_state_(State new_state)
         {
+            MSS_BEGIN(bool);
+
             if (state_ == new_state)
-                return false;
+                MSS_RETURN_OK();
 
             //Exit
             switch (state_)
@@ -136,19 +169,26 @@ namespace app {
             //Enter
             switch (state_)
             {
-                case State::SendingQuestion:
+                case State::Idle:
+                    rs485_ep_.flush_receive();
+                    break;
+                case State::SendQuestion:
+                    MSS(prepare_question_(), error_("Failed to prepare question"));
                     out_offset_ = 0;
                     break;
                 case State::WaitForAnswer:
                     timeout_ = Clock::now()+std::chrono::milliseconds(1000);
+                    break;
+                case State::SendUnderstood:
+                    MSS(prepare_understood_(), error_("Failed to prepare understood"));
+                    out_offset_ = 0;
                     break;
                 case State::Error:
                     std::cout << "Error: " << error_msg_ << std::endl;
                     change_state_(State::Idle);
                     break;
             }
-
-            return true;
+            MSS_END();
         }
 
         gubg::serial::Endpoint rs485_ep_;
@@ -162,6 +202,7 @@ namespace app {
         size_t out_offset_;
 
         unsigned int message_id_ = 0;
+        unsigned int to_;
 
         Clock::time_point timeout_;
 
