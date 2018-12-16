@@ -1,8 +1,19 @@
-[udp hub]{
+[slave]{
+    [online indicator]
+    [refactor into classes and files]
 }
-[protocol]{
-    [t2]
-    [commands]
-}
-[hardware]{
+[master]{
+    [keep slaves online]
+    [model]{
+        [Slave]
+        [Input]
+        [Output]
+        [PatchBay]
+        [Gesture]
+        [Controller]
+        [InQueue]
+        [OutQueue]
+        [CallCenter]
+        [Endpoint]
+    }
 }
