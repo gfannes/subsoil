@@ -26,9 +26,7 @@ namespace app {
 
             blinker_.process(elapsed_us);
 
-            online_timer_.process(elapsed_us, [&](){
-                    blinker_.set_mode(Mode::SlowDark);
-                    });
+            online_timer_.process(elapsed_us, [&](){ set_offline_(); });
 
             switch (state_)
             {
@@ -65,8 +63,7 @@ namespace app {
                                 case laurot::id::Understood:
                                     {
                                         TAG("received an understood")
-                                        blinker_.set_mode(Mode::Bright);
-                                        online_timer_.add(1000000u);
+                                        set_online_();
                                         change_state_(State::Idle);
                                     }
                                     break;
@@ -127,8 +124,17 @@ namespace app {
         gubg::arduino::rs485::Endpoint ep_;
         message::Parser parser_;
 
-        bool is_online_ = false;
         gubg::arduino::Timer<Micros> online_timer_;
+        void set_online_()
+        {
+            blinker_.set_mode(Mode::Bright);
+            //We stay online for 1sec
+            online_timer_.start(1000000u);
+        }
+        void set_offline_()
+        {
+            blinker_.set_mode(Mode::SlowDark);
+        }
 
         using Mode = gubg::arduino::Blinker::Mode;
         gubg::arduino::Blinker blinker_{13};
