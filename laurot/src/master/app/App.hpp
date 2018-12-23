@@ -34,6 +34,7 @@ namespace app {
                 MSS(setup_());
 
                 Message msg;
+                msg.event.connect([](auto id){std::cout << "Message stage: " << (int)id << std::endl;});
                 msg.poll.emplace(0);
                 out_queue_.push(msg);
 

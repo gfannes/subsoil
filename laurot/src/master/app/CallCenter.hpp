@@ -126,6 +126,7 @@ namespace app {
                 to_ = poll.to;
                 question.attr(laurot::id::To, to_);
                 question.attr(laurot::id::Id, message_id_);
+                msg.event.emit(Message::Serialized);
             }
 
             L(out_msg_str_.size());
