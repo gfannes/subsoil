@@ -33,14 +33,9 @@ namespace app {
             {
                 MSS(setup_());
 
-                Message msg;
-                msg.event.connect([](auto id){std::cout << "Message stage: " << (int)id << std::endl;});
-                msg.poll.emplace(0);
-                out_queue_.push(msg);
-
                 MSS(call_center_.process());
                 MSS(call_center_.process());
-                for (auto i = 0u; i < 3; ++i)
+                for (auto i = 0u; i < 3000; ++i)
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(20));
                     MSS(call_center_.process());
@@ -54,11 +49,29 @@ namespace app {
         bool setup_()
         {
             MSS_BEGIN(bool);
+
             MSS(call_center_.setup(options_, in_queue_, out_queue_));
+
+            poll_messages_.resize(options_.nr_slaves);
+            for (auto ix = 0u; ix < poll_messages_.size(); ++ix)
+            {
+                auto &msg = poll_messages_[ix];
+                msg.poll.emplace(0);
+                auto add_again = [=](auto stage)
+                {
+                    std::cout << "Message stage: " << (int)stage << std::endl;
+                    out_queue_.push(poll_messages_[ix]);
+                };
+                msg.event.connect([](auto stage){});
+                out_queue_.push(msg);
+            }
+
             MSS_END();
         }
 
         Options options_;
+
+        std::vector<Message> poll_messages_;
 
         Queue in_queue_;
         Queue out_queue_;
