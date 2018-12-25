@@ -35,9 +35,10 @@ namespace app {
 
                 MSS(call_center_.process());
                 MSS(call_center_.process());
-                for (auto i = 0u; i < 3000; ++i)
+                for (; true; )
+                /* for (auto i = 0u; i < 3000; ++i) */
                 {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
                     MSS(call_center_.process());
                 }
             }
@@ -56,7 +57,7 @@ namespace app {
             for (auto ix = 0u; ix < poll_messages_.size(); ++ix)
             {
                 auto &msg = poll_messages_[ix];
-                msg.poll.emplace(0);
+                msg.poll.emplace(ix);
                 auto add_again = [=](auto stage)
                 {
                     std::cout << "Message stage: " << (int)stage << std::endl;

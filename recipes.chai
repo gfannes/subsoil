@@ -58,6 +58,7 @@ root.book("laurot", fun(b){
     b.recipe("slave", TargetType.Executable, fun(rcp){
         rcp.add("laurot/src/slave", "**.[hc]pp")
         rcp.add("laurot/src", "laurot/**.[hc]pp");
+        rcp.define("LAUROT_SLAVE_ID", "0")
         rcp.depends_on("/arduino/core")
         rcp.depends_on("gubg/arduino")
         rcp.depends_on("gubg/std/func")
