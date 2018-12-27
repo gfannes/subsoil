@@ -135,13 +135,14 @@ end
 
 namespace :laurot do
     desc "Laurot slave"
-    task :slave, :arch do |t,args|
-        uri, arch = "laurot/slave", args[:arch]||"mega"
-        output_dir = "laurot/build/#{arch}"
+    task :slave, [:id, :arch] do |t,args|
+        uri, id, arch = "laurot/slave", args[:id]||0, args[:arch]||"mega"
+        output_dir = "laurot/build/#{arch}_#{id}"
         cooker()
             .recipes_fn(gubg_arduino, "recipes.chai")
             .toolchain("gcc", "#{gubg_arduino}/cook/avr.chai")
             .option(arch)
+            .option("slave.id", id)
             .output(output_dir)
             .generate(:ninja, uri)
             .ninja()
