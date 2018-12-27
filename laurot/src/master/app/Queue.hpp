@@ -12,7 +12,7 @@ namespace app {
     {
         enum Stage
         {
-            Serialized,
+            Popped,
         };
 
         struct Poll

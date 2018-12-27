@@ -4,9 +4,6 @@
 #include "laurot/Id.hpp"
 #include "gubg/t2/Parser.hpp"
 
-#define gubg_no_log 1
-#include "gubg/log.hpp"
-
 namespace app { namespace message { 
 
     class Parser: public gubg::t2::Parser_crtp<Parser>
@@ -22,7 +19,6 @@ namespace app { namespace message {
         template <typename Tag, typename Level>
         void t2_open(Tag tag, Level lvl)
         {
-            TAG("open")ATTR(tag)ATTR(lvl)
             level_ = lvl;
             switch (level_)
             {
@@ -38,7 +34,6 @@ namespace app { namespace message {
         template <typename Key, typename Value>
         void t2_attr(Key key, Value value)
         {
-            TAG("attr")ATTR(key)ATTR(value)
             switch (level_)
             {
                 case 1:
@@ -53,7 +48,6 @@ namespace app { namespace message {
         template <typename Level>
         void t2_close(Level lvl)
         {
-            TAG("close")ATTR(lvl)
             switch (lvl)
             {
                 case 0:

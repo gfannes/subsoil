@@ -1,9 +1,9 @@
+#define gubg_no_log 0
+#include "gubg/log.hpp"
+
 #include "Arduino.h"
 #include "app/App.hpp"
 #include "gubg/arduino/Elapsed.hpp"
-
-#define gubg_no_log 1
-#include "gubg/log.hpp"
 
 namespace my { 
     using Micros = decltype(micros());

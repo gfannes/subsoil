@@ -31,10 +31,10 @@ namespace app {
             switch (state_)
             {
                 case State::Init:
-                    change_state_(State::Idle);
+                    return change_state_(State::Idle);
                     break;
                 case State::Idle:
-                    change_state_(State::Receiving);
+                    return change_state_(State::Receiving);
                     break;
                 case State::Receiving:
                     {
@@ -42,39 +42,41 @@ namespace app {
                         ep_.receive(buffer_offset_, buffer_.data(), BufferSize);
 
                         for (auto i = 0u; i < buffer_offset_; ++i)
-                        {
-                            TAG("ch")ATTR(i)
                             parser_.process(buffer_[i]);
-                        }
 
                         if (parser_.ready())
                         {
-                            if (parser_.to == LAUROT_SLAVE_ID)
-                                switch (parser_.tag1)
-                                {
-                                    case laurot::id::Question:
-                                        {
-                                            TAG("received a question")
-                                            app::message::create_answer(buffer_, buffer_size_, parser_.message_id);
-                                            buffer_offset_ = 0;
-                                            ATTR(buffer_size_)
-                                            change_state_(State::Sending);
-                                        }
-                                        break;
-                                    case laurot::id::Understood:
-                                        {
-                                            TAG("received an understood")
-                                            set_online_();
-                                            change_state_(State::Idle);
-                                        }
-                                        break;
-                                    default:
-                                        {
-                                            TAG("UNKNOWN TAG RECEIVED")ATTR(parser_.tag1)
-                                            change_state_(State::Error);
-                                        }
-                                        break;
-                                }
+                            if (parser_.to != LAUROT_SLAVE_ID)
+                            {
+                                TAG("Not for me")ATTR(parser_.to)
+                                return change_state_(State::Idle);
+                            }
+
+                            switch (parser_.tag1)
+                            {
+                                case laurot::id::Question:
+                                    {
+                                        TAG("received a question")
+                                        app::message::create_answer(buffer_, buffer_size_, parser_.message_id);
+                                        buffer_offset_ = 0;
+                                        ATTR(buffer_size_)
+                                        return change_state_(State::Sending);
+                                    }
+                                    break;
+                                case laurot::id::Understood:
+                                    {
+                                        TAG("received an understood")
+                                        set_online_();
+                                        return change_state_(State::Idle);
+                                    }
+                                    break;
+                                default:
+                                    {
+                                        TAG("UNKNOWN TAG RECEIVED")ATTR(parser_.tag1)
+                                        return change_state_(State::Error);
+                                    }
+                                    break;
+                            }
                         }
                     }
                     break;
@@ -83,12 +85,12 @@ namespace app {
                     {
                         ep_.send(buffer_offset_, buffer_.data(), buffer_size_);
                         if (!ep_.is_sending())
-                            change_state_(State::Idle);
+                            return change_state_(State::Idle);
                     }
                     break;
 
                 case State::Error:
-                    change_state_(State::Idle);
+                    return change_state_(State::Idle);
                     break;
             }
         }

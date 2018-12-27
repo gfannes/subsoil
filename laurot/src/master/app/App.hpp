@@ -23,7 +23,7 @@ namespace app {
 
         bool run()
         {
-            MSS_BEGIN(bool, "");
+            MSS_BEGIN(bool);
 
             if (options_.print_help)
             {
@@ -60,10 +60,15 @@ namespace app {
                 msg.poll.emplace(ix);
                 auto add_again = [=](auto stage)
                 {
-                    std::cout << "Message stage: " << (int)stage << std::endl;
-                    out_queue_.push(poll_messages_[ix]);
+                    switch (stage)
+                    {
+                        case Message::Popped:
+                            std::cout << "Adding poll message to out queue again for " << " " << ix << std::endl;
+                            out_queue_.push(poll_messages_[ix]);
+                            break;
+                    }
                 };
-                msg.event.connect([](auto stage){});
+                msg.event.connect(add_again);
                 out_queue_.push(msg);
             }
 

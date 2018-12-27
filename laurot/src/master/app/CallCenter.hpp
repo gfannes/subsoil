@@ -31,7 +31,7 @@ namespace app {
 
         bool process()
         {
-            MSS_BEGIN(bool, "");
+            MSS_BEGIN(bool);
             L(C(state_, int));
             switch (state_)
             {
@@ -107,11 +107,14 @@ namespace app {
             MSS_BEGIN(bool, "");
 
             if (out_->empty())
-                //Nothing to send
+            {
+                L("Nothing to send");
                 MSS_RETURN_OK();
+            }
 
             const auto msg = out_->front();
             out_->pop();
+            msg.event.emit(Message::Popped);
 
             message_id_ = (message_id_+1)%64;
 
@@ -124,9 +127,9 @@ namespace app {
                 const auto &poll = *msg.poll;
                 auto question = doc.tag(laurot::id::Question);
                 to_ = poll.to;
+                L(C(to_));
                 question.attr(laurot::id::To, to_);
                 question.attr(laurot::id::Id, message_id_);
-                msg.event.emit(Message::Serialized);
             }
 
             L(out_msg_str_.size());
@@ -178,7 +181,7 @@ namespace app {
                     out_offset_ = 0;
                     break;
                 case State::WaitForAnswer:
-                    timeout_ = Clock::now()+std::chrono::milliseconds(1000);
+                    timeout_ = Clock::now()+std::chrono::milliseconds(100);
                     break;
                 case State::SendUnderstood:
                     MSS(prepare_understood_(), error_("Failed to prepare understood"));
