@@ -11,8 +11,8 @@ namespace app { namespace message {
     using String = gubg::string::Buffer<char>;
     using T2Doc = gubg::t2::Document<String>;
 
-    template <typename Buffer>
-    void create_answer(Buffer &buffer, size_t &size, unsigned int message_id)
+    template <typename Buffer, typename Ftor>
+    void create_answer(Buffer &buffer, size_t &size, unsigned int message_id, Ftor &&ftor)
     {
         String string{RANGE(buffer)};
 
@@ -20,6 +20,7 @@ namespace app { namespace message {
             T2Doc doc{string};
             auto answer = doc.tag(laurot::id::Answer);
             answer.attr(laurot::id::Id, message_id);
+            ftor(answer);
         }
 
         size = string.size();

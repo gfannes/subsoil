@@ -3,6 +3,7 @@
 
 #include "app/message/Parser.hpp"
 #include "app/message/Builder.hpp"
+#include "app/Inputs.hpp"
 #include "gubg/arduino/Timer.hpp"
 #include "gubg/arduino/Blinker.hpp"
 #include "gubg/arduino/rs485/Endpoint.hpp"
@@ -18,10 +19,14 @@ namespace app {
             ep_.init(Serial1, 8, 9600, SERIAL_8N1);
 
             blinker_.set_mode(Mode::SlowDark);
+
+            inputs_.setup();
         }
 
         void process(unsigned long elapsed_us)
         {
+            inputs_.process();
+
             ep_.process();
 
             blinker_.process(elapsed_us);
@@ -57,7 +62,19 @@ namespace app {
                                 case laurot::id::Question:
                                     {
                                         TAG("received a question")
-                                        app::message::create_answer(buffer_, buffer_size_, parser_.message_id);
+                                        auto lambda = [&](auto &answer)
+                                        {
+                                            size_t ix;
+                                            bool up;
+                                            unsigned long elapse;
+                                            if (inputs_.pop_dirty(ix, up, elapse))
+                                            {
+                                                auto ud = answer.tag(up ? laurot::id::Up : laurot::id::Down);
+                                                ud.attr(laurot::id::Id, ix);
+                                                ud.attr(laurot::id::When, elapse);
+                                            }
+                                        };
+                                        app::message::create_answer(buffer_, buffer_size_, parser_.message_id, lambda);
                                         buffer_offset_ = 0;
                                         ATTR(buffer_size_)
                                         return change_state_(State::Sending);
@@ -146,6 +163,8 @@ namespace app {
         std::array<char, BufferSize> buffer_;
         size_t buffer_offset_ = 0;
         size_t buffer_size_ = 0;
+
+        Inputs<22, 32> inputs_;
     };
 
 
