@@ -43,6 +43,12 @@ namespace app {
                     break;
                 case State::Receiving:
                     {
+                        for (; stage_size_ < stage_.size(); ++stage_size_)
+                        {
+                            if (!inputs_.pop_dirty(stage_[stage_size_]))
+                                break;
+                        }
+
                         buffer_offset_ = 0;
                         ep_.receive(buffer_offset_, buffer_.data(), BufferSize);
 
@@ -64,14 +70,12 @@ namespace app {
                                         TAG("received a question")
                                         auto lambda = [&](auto &answer)
                                         {
-                                            size_t ix = 0;
-                                            bool up = true;
-                                            unsigned long elapse = 0;
-                                            if (inputs_.pop_dirty(ix, up, elapse))
+                                            for (auto i = 0u; i < stage_size_; ++i)
                                             {
-                                                auto ud = answer.tag(up ? laurot::id::Up : laurot::id::Down);
-                                                ud.attr(laurot::id::Id, ix);
-                                                ud.attr(laurot::id::When, elapse);
+                                                const auto &info = stage_[i];
+                                                auto ud = answer.tag(info.up ? laurot::id::Up : laurot::id::Down);
+                                                ud.attr(laurot::id::Id, info.ix);
+                                                ud.attr(laurot::id::When, info.elapse_ms);
                                             }
                                         };
                                         app::message::create_answer(buffer_, buffer_size_, parser_.message_id, lambda);
@@ -84,6 +88,7 @@ namespace app {
                                     {
                                         TAG("received an understood")
                                         set_online_();
+                                        stage_size_ = 0;
                                         return change_state_(State::Idle);
                                     }
                                     break;
@@ -159,12 +164,15 @@ namespace app {
         using Mode = gubg::arduino::Blinker::Mode;
         gubg::arduino::Blinker blinker_{13};
 
-        static const auto BufferSize = 16;
+        static const auto BufferSize = 64;
         std::array<char, BufferSize> buffer_;
         size_t buffer_offset_ = 0;
         size_t buffer_size_ = 0;
 
         Inputs<22, 32> inputs_;
+
+        std::array<InputInfo, 4> stage_;
+        size_t stage_size_ = 0;
     };
 
 

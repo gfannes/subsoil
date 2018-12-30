@@ -1,9 +1,8 @@
 [slave]{
-    [online indicator]
     [refactor into classes and files]
+    [parse messages into a single struct, only react on the latest on]
 }
 [master]{
-    [keep slaves online]
     [model]{
         [Slave]
         [Input]

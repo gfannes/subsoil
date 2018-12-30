@@ -44,8 +44,10 @@ namespace app {
                     {
                         MSS(rs485_ep_.send(out_offset_, out_msg_str_.data(), out_msg_str_.size()));
                         if (out_offset_ == out_msg_str_.size())
+                        {
                             //Message is sent
                             return change_state_(State::WaitForAnswer);
+                        }
                     }
                     break;
                 case State::WaitForAnswer:
@@ -58,8 +60,7 @@ namespace app {
                         L(C(offset));
                         auto lamdba = [&](gubg::t2::Byte *begin, gubg::t2::Byte *end)
                         {
-                            MSS_BEGIN(bool, "");
-                            L("Received t2 message of size " << end-begin);
+                            MSS_BEGIN(bool);
                             gubg::t2::Range range{begin, end};
                             MSS(range.pop_tag_if(laurot::id::Answer), error_("Expected an answer"));
                             for (gubg::t2::Data key, value; range.pop_attr(key, value); )
@@ -166,6 +167,7 @@ namespace app {
 
             MSS_END();
         }
+
         bool prepare_understood_()
         {
             MSS_BEGIN(bool);
