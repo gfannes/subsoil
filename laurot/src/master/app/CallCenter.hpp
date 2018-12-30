@@ -61,15 +61,41 @@ namespace app {
                             MSS_BEGIN(bool, "");
                             L("Received t2 message of size " << end-begin);
                             gubg::t2::Range range{begin, end};
-                            MSS(range.pop_tag(laurot::id::Answer), error_("Expected an answer"));
-                            gubg::t2::Data key, value;
-                            while (range.pop_attr(key, value))
+                            MSS(range.pop_tag_if(laurot::id::Answer), error_("Expected an answer"));
+                            for (gubg::t2::Data key, value; range.pop_attr(key, value); )
                             {
                                 switch (key)
                                 {
                                     case laurot::id::Id:
                                         MSS(value == message_id_, error_("Message id mismatch"));
                                         break;
+                                    default:
+                                        std::cout << "Unknown attribute " << key << " " << value << std::endl;
+                                        break;
+                                }
+                            }
+                            gubg::t2::Range answer_range;
+                            if (!range.pop_block(answer_range))
+                            {
+                                std::cout << "No answer block" << std::endl;
+                            }
+                            else
+                            {
+                                std::cout << C(answer_range.size()) << std::endl;
+                                for (gubg::t2::Data tag; answer_range.pop_tag(tag);)
+                                {
+                                    switch (tag)
+                                    {
+                                        case laurot::id::Up:
+                                            std::cout << "UP detected" << std::endl;
+                                            break;
+                                        case laurot::id::Down:
+                                            std::cout << "DOWN detected" << std::endl;
+                                            break;
+                                        default:
+                                            std::cout << "Unknown tag " << tag << std::endl;
+                                            break;
+                                    }
                                 }
                             }
                             change_state_(State::SendUnderstood);
@@ -77,7 +103,11 @@ namespace app {
                             MSS_END();
                         };
                         for (auto i = 0u; i < offset; ++i)
-                            segmenter_.process(buffer[i], lamdba);
+                        {
+                            const auto ch = buffer[i];
+                            std::cout << std::hex << (int)ch << std::endl;
+                            segmenter_.process(ch, lamdba);
+                        }
                     }
                     break;
                 case State::SendUnderstood:

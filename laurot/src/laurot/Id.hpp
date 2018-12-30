@@ -6,22 +6,22 @@ namespace laurot {
     namespace id { 
         enum Type
         {
-            Question,
-            Answer,
-            Understood,
+            Question   = 0,
+            Answer     = 1,
+            Understood = 2,
 
-            Up,
-            Down,
+            Up         = 3,
+            Down       = 4,
 
-            Pulse,
-            SetState,
-            HasState,
+            Pulse      = 5,
+            SetState   = 6,
+            HasState   = 7,
 
-            Id,
-            To,
-            When,
-            Duration,
-            State,
+            Id         = 8,
+            To         = 9,
+            When       = 10,
+            Duration   = 11,
+            State      = 12,
         };
     } 
 

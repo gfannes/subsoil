@@ -64,9 +64,9 @@ namespace app {
                                         TAG("received a question")
                                         auto lambda = [&](auto &answer)
                                         {
-                                            size_t ix;
-                                            bool up;
-                                            unsigned long elapse;
+                                            size_t ix = 0;
+                                            bool up = true;
+                                            unsigned long elapse = 0;
                                             if (inputs_.pop_dirty(ix, up, elapse))
                                             {
                                                 auto ud = answer.tag(up ? laurot::id::Up : laurot::id::Down);
