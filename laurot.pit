@@ -1,3 +1,67 @@
+[foundation]{
+}
+[requirement]{
+}
+[feature]{
+    [slave]{
+        [devops]{
+            [set id]
+        }
+        [aruidno generic functionality]{
+            [timer]
+            [pin]
+            [rs485]
+        }
+        [ui]{
+            [blink leds according to state]
+        }
+        [inputs]{
+            [poll input pin states]
+        }
+        [outputs]{
+            [set output pin pulse]
+        }
+        [state machine]{
+            [set online state when successful communication]
+            [set offline timer of 1s]
+            [only work on latest message]{
+                [copy output from parser]
+                [overwrite when new message is received]
+                [reset internal state]
+            }
+        }
+        [validation]{
+            [repro test case where slave answers previous message]
+        }
+    }
+    [master]{
+        [io]{
+            [rs485 tty]
+        }
+        [options]{
+            [set nr slaves]
+        }
+    }
+    [protocol]{
+        [t2]{
+            [design]
+        }
+        [laurot]{
+            [design]
+        }
+    }
+    [testing]{
+    }
+}
+[plan]{
+}
+[report]{
+}
+[design]{
+}
+[solution]{
+}
+
 [slave]{
     [refactor into classes and files]
     [parse messages into a single struct, only react on the latest on]
