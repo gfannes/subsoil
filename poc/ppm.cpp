@@ -1,10 +1,11 @@
-#include <gubg/arduino/ppm/Pin.hpp>
+#include <gubg/arduino/ppm/Pin01.hpp>
+#include <gubg/arduino/ppm/Pin11.hpp>
 using namespace gubg::arduino;
 
 const unsigned int Min = 1050;
 const unsigned int Max = 1850;
-ppm::Pin<2 , Min, Max> ch1;
-ppm::Pin<3 , Min, Max> ch2;
+ppm::Pin01<2 , Min, Max> ch1;
+ppm::Pin11<3 , Min, Max> ch2;
 
 void setup()
 {
