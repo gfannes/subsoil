@@ -8,9 +8,10 @@ ppm::Pin<3 , Min, Max> ch2;
 
 void setup()
 {
+    Serial.begin(9600);
+
     ch1.setup();
     ch2.setup();
-    Serial.begin(9600);
 }
 
 void loop()

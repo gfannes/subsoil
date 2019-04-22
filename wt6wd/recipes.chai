@@ -1,10 +1,9 @@
 {
     var mod = cook["wt6wd"]
-    mod.recipe("motor", TargetType.Executable, fun(r){
-        /* r.add("", "blinkie.cpp") */
-        /* r.add("", "rc_demo.cpp") */
+    mod.recipe("main", TargetType.Executable, fun(r){
         r.add("", "main.cpp")
         r.depends_on("/arduino/core")
         r.depends_on("/arduino/servo")
+        r.depends_on("/gubg/arduino")
     })
 }

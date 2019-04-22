@@ -56,22 +56,6 @@ def gubg_arduino()
     "#{ENV["gubg"]}/gubg.arduino"
 end
 
-namespace :wt6wd do
-    desc "Build for arduino"
-    task :build, :arch do |t,args|
-        arch = args[:arch]
-        archs = %w[uno mega lilypad]
-        raise("Invalid arch \"#{arch}\", should be one of #{archs*' '}") unless archs.include?(arch)
-
-        output_dir = "wt6wd/build/#{arch}"
-        sh "cook -t gcc -t #{gubg_arduino}/cook/avr.chai -T #{arch} -g ninja -g naft -o #{output_dir} -f #{gubg_arduino} -f wt6wd /wt6wd/motor"
-        # sh "ninja -f #{output_dir}/build.ninja -t clean"
-        sh "ninja -f #{output_dir}/build.ninja -v"
-
-        Arduino.program("#{output_dir}/wt6wd.motor", arch: arch)
-    end
-end
-
 def cooker()
     require("gubg/shared")
     require("gubg/build/Cooker")
@@ -80,6 +64,23 @@ def cooker()
     when :windows then c.option("c++.std", 14)
     else c.option("c++.std", 17) end
     c
+end
+
+namespace :wt6wd do
+    desc "Build for arduino"
+    task :main, :arch do |t,args|
+        uri, arch = "wt6wd/main", args[:arch]||"mega"
+        output_dir = "wt6wd/build/main/#{arch}"
+        cooker()
+            .recipes_fn(gubg_arduino, "recipes.chai")
+            .recipes_fn("wt6wd/recipes.chai")
+            .toolchain("gcc", "#{gubg_arduino}/cook/avr.chai")
+            .option(arch)
+            .output(output_dir)
+            .generate(:ninja, uri)
+            .ninja()
+        Arduino.program("#{output_dir}/#{uri.gsub("/",".")}", arch: arch)
+    end
 end
 
 namespace :fri3d do
