@@ -34,7 +34,7 @@ namespace  {
             {
                 if (millis-prev_toggle_timepoint_ < debounce_duration)
                     //This toggle comes too soon, we are still debouncing
-                    toggle = false;
+                    toggled = false;
                 else
                     prev_toggle_timepoint_ = millis;
             }
