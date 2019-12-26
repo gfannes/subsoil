@@ -13,7 +13,7 @@ namespace  {
 
     gubg::arduino::Pin status_led{13};
     Timer status_timer;
-    Millis status_duration = 100;
+    Millis status_duration = 100;//5Hz blink
 
     class Button
     {
@@ -22,6 +22,7 @@ namespace  {
 
         void setup(unsigned int pin, char ch)
         {
+            //Configure pin and enable internal pull-up resistor
             pin_.set_pin(pin).set_input(true);
             ch_ = ch;
         }
@@ -29,10 +30,14 @@ namespace  {
         bool process(Millis millis)
         {
             bool toggled = pin_.toggled();
-            if (millis-prev_toggle_timepoint_ < debounce_duration)
-                return false;
             if (toggled)
-                prev_toggle_timepoint_ = millis;
+            {
+                if (millis-prev_toggle_timepoint_ < debounce_duration)
+                    //This toggle comes too soon, we are still debouncing
+                    toggle = false;
+                else
+                    prev_toggle_timepoint_ = millis;
+            }
             return toggled;
         }
 
@@ -51,6 +56,7 @@ void setup()
     status_timer.start(status_duration);
     Serial.begin(9600);
 
+    //We assign names a,b,c,d,e to pins 8,9,10,11,12
     for (auto i = 0u; i < 5u; ++i)
         buttons[i].setup(8+i, 'a'+i);
 }
@@ -66,8 +72,10 @@ void loop()
     };
     status_timer.process(elapsed_time(), on_status_timer);
 
+    //Loop over the buttons
     bix = (bix == 0 ? buttons.size()-1 : bix-1);
     auto &button = buttons[bix];
+
     if (button.process(millis()))
         Serial.write(button.name());
 }
