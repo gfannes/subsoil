@@ -154,3 +154,20 @@ namespace :laurot do
         cooker().generate(:ninja, "laurot/master").ninja().run("-t", "/dev/ttyUSB0", "-b", 9600, "-s", 1)
     end
 end
+
+namespace :quiz do
+    desc "Quiz slave"
+    task :slave, [:id, :arch] do |t,args|
+        uri, id, arch = "quiz/slave", args[:id]||0, args[:arch]||"uno"
+        output_dir = "quiz/build/#{arch}_#{id}"
+        cooker()
+            .recipes_fn(gubg_arduino, "recipes.chai")
+            .toolchain("gcc", "#{gubg_arduino}/cook/avr.chai")
+            .option(arch)
+            .option("slave.id", id)
+            .output(output_dir)
+            .generate(:ninja, uri)
+            .ninja()
+        Arduino.program("#{output_dir}/#{uri.gsub("/",".")}", arch: arch)
+    end
+end
