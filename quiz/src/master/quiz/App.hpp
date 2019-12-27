@@ -3,6 +3,8 @@
 
 #include <gubg/mss.hpp>
 #include <quiz/Presenter.hpp>
+#include <thread>
+#include <chrono>
 
 namespace quiz { 
 
@@ -24,6 +26,7 @@ namespace quiz {
         {
             MSS_BEGIN(bool);
             MSS(presenter_(error));
+            std::this_thread::sleep_for(std::chrono::milliseconds{10});
             MSS_END();
         }
         Model model_;

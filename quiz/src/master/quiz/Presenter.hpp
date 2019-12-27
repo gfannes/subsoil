@@ -22,9 +22,10 @@ namespace quiz {
             MSS(model_(error));
             MSS(view_(error));
 
-            if (tick_%5000 == 0)
+            const unsigned int count = 100;
+            if (tick_%count == 0)
             {
-                const auto tt = tick_/5000;
+                const auto tt = tick_/count;
                 view_.answer_was_correct(tt%2 == 0);
             }
 
