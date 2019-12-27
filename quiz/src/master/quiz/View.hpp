@@ -5,6 +5,7 @@
 #include <gubg/prob/Uniform.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <memory>
 #include <sstream>
 #include <iomanip>
 
@@ -27,17 +28,14 @@ namespace quiz {
                 std::ostringstream oss;
                 oss << prefix << std::setw(2) << std::setfill('0')<< ix << ".ogg";
                 auto fn = oss.str();
-                auto &buffer = sound_buffers_[fn];
-                if (buffer.loadFromFile(fn))
-                {
-                    auto &sound = sounds.emplace_back();
-                    sound.setBuffer(buffer);
-                }
+                SoundPtr sound;
+                if (load_sound_(sound, fn))
+                    sounds.push_back(sound);
             };
             for (auto i = 0; i < 18; ++i)
             {
-                load_sound(ok_sounds_, "quiz/media/ok", i);
-                load_sound(ko_sounds_, "quiz/media/ko", i);
+                load_sound(ok_sounds_, "quiz/media/ok/", i);
+                load_sound(ko_sounds_, "quiz/media/ko/", i);
             }
         }
 
@@ -47,7 +45,8 @@ namespace quiz {
         {
             Sounds &sounds = b ? ok_sounds_ : ko_sounds_;
             auto &sound = gubg::prob::select_uniform(sounds);
-            sound.play();
+            stop_(playing_sounds_);
+            play_(sound);
         }
 
         bool operator()(std::string &error)
@@ -64,6 +63,9 @@ namespace quiz {
         }
 
     private:
+        using SoundPtr = std::shared_ptr<sf::Sound>;
+        using Sounds = std::vector<SoundPtr>;
+
         bool process_events_(std::string &error)
         {
             MSS_BEGIN(bool);
@@ -83,14 +85,33 @@ namespace quiz {
             window_.display();
             MSS_END();
         }
+        bool load_sound_(SoundPtr &sound, const std::string &fn)
+        {
+            MSS_BEGIN(bool);
+            auto &buffer = sound_buffers_[fn];
+            MSS(buffer.loadFromFile(fn));
+            sound.reset(new sf::Sound{buffer});
+            MSS_END();
+        }
+        void stop_(Sounds &sounds)
+        {
+            for (auto &sound: sounds)
+                sound->stop();
+            sounds.clear();
+        }
+        void play_(SoundPtr &sound)
+        {
+            sound->play();
+            playing_sounds_.push_back(sound);
+        }
 
         Events *events_ = nullptr;
         sf::RenderWindow window_;
 
         std::map<std::string, sf::SoundBuffer> sound_buffers_;
-        using Sounds = std::vector<sf::Sound>;
         Sounds ok_sounds_;
         Sounds ko_sounds_;
+        Sounds playing_sounds_;
     };
 
 } 
