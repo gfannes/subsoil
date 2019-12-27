@@ -9,10 +9,6 @@ namespace quiz {
     class App
     {
     public:
-        App()
-        {
-            view_.inject_events_receiver(&presenter_);
-        }
         bool operator()(std::string &error)
         {
             if (presenter_.quit())

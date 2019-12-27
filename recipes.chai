@@ -89,5 +89,6 @@ root.book("quiz", fun(b){
         rcp.library("sfml-graphics")
         rcp.library("sfml-window")
         rcp.library("sfml-system")
+        rcp.library("sfml-audio")
     })
 })

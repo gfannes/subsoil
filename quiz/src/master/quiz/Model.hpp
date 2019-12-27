@@ -13,6 +13,7 @@ namespace quiz {
             MSS_BEGIN(bool);
             MSS_END();
         }
+
     private:
     };
 
