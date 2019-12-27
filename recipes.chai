@@ -81,6 +81,13 @@ root.book("quiz", fun(b){
         rcp.depends_on("gubg/arduino")
         rcp.depends_on("gubg/std/func")
         rcp.depends_on("gubg/io/hpp")
-        /* rcp.depends_on("gubg/func"); */
+    })
+    b.recipe("master", TargetType.Executable, fun(rcp){
+        rcp.add("quiz/src/master", "**.[hc]pp")
+        rcp.add("quiz/src", "quiz/**.[hc]pp");
+        rcp.depends_on("gubg/func");
+        rcp.library("sfml-graphics")
+        rcp.library("sfml-window")
+        rcp.library("sfml-system")
     })
 })
