@@ -22,12 +22,16 @@ namespace quiz {
             MSS(model_(error));
             MSS(view_(error));
 
-            const unsigned int count = 100;
-            if (tick_%count == 0)
+            if (false)
             {
-                const auto tt = tick_/count;
-                view_.answer_was_correct(tt%2 == 0);
+                const unsigned int count = 100;
+                if (tick_%count == 0)
+                {
+                    const auto tt = tick_/count;
+                    view_.answer_was_correct(tt%2 == 0);
+                }
             }
+            view_.set_description("How many bitches can you fit in a Tesla?\n(model 3)");
 
             ++tick_;
             MSS_END();

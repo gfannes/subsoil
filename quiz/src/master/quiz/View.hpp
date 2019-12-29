@@ -1,6 +1,7 @@
 #ifndef HEADER_quiz_View_hpp_ALREADY_INCLUDED
 #define HEADER_quiz_View_hpp_ALREADY_INCLUDED
 
+#include <gubg/sfml/layout.hpp>
 #include <gubg/mss.hpp>
 #include <gubg/prob/Uniform.hpp>
 #include <SFML/Graphics.hpp>
@@ -23,20 +24,7 @@ namespace quiz {
         View(unsigned int width, unsigned int height)
         : window_(sf::VideoMode{width, height}, "Quiz master")
         {
-            auto load_sound = [&](auto &sounds, auto prefix, auto ix)
-            {
-                std::ostringstream oss;
-                oss << prefix << std::setw(2) << std::setfill('0')<< ix << ".ogg";
-                auto fn = oss.str();
-                SoundPtr sound;
-                if (load_sound_(sound, fn))
-                    sounds.push_back(sound);
-            };
-            for (auto i = 0; i < 18; ++i)
-            {
-                load_sound(ok_sounds_, "quiz/media/ok/", i);
-                load_sound(ko_sounds_, "quiz/media/ko/", i);
-            }
+            construct_(ctor_error_);
         }
 
         void inject_events_receiver(Events *events) {events_ = events;}
@@ -48,10 +36,16 @@ namespace quiz {
             stop_(playing_sounds_);
             play_(sound);
         }
+        void set_description(const std::string &descr)
+        {
+            description_.setString(descr);
+        }
 
         bool operator()(std::string &error)
         {
             MSS_BEGIN(bool);
+
+            MSS(ctor_error_.empty(), error = ctor_error_);
 
             MSS(window_.isOpen(), error = "window is closed");
 
@@ -81,7 +75,8 @@ namespace quiz {
         bool draw_(std::string &error)
         {
             MSS_BEGIN(bool);
-            window_.clear();
+            window_.clear(sf::Color::Black);
+            window_.draw(description_);
             window_.display();
             MSS_END();
         }
@@ -105,8 +100,69 @@ namespace quiz {
             playing_sounds_.push_back(sound);
         }
 
+        bool construct_(std::string &error)
+        {
+            MSS_BEGIN(bool);
+            MSS(load_sounds_(error));
+            MSS(load_font_(error));
+            MSS(setup_description_(error));
+            MSS(layout_elements_(error));
+            MSS_END();
+        }
+        bool load_sounds_(std::string &error)
+        {
+            MSS_BEGIN(bool);
+            auto load_sound = [&](auto &sounds, auto prefix, auto ix)
+            {
+                MSS_BEGIN(bool);
+                std::ostringstream oss;
+                oss << prefix << std::setw(2) << std::setfill('0')<< ix << ".ogg";
+                auto fn = oss.str();
+                SoundPtr sound;
+                MSS(load_sound_(sound, fn), error = std::string("Could not load sound from ")+fn);
+                sounds.push_back(sound);
+                MSS_END();
+            };
+            for (auto i = 0; i < 18; ++i)
+            {
+                MSS(load_sound(ok_sounds_, "quiz/media/ok/", i));
+                MSS(load_sound(ko_sounds_, "quiz/media/ko/", i));
+            }
+            MSS_END();
+        }
+        bool load_font_(std::string &error)
+        {
+            MSS_BEGIN(bool);
+            const auto fn = "quiz/media/font/GenR102.TTF";
+            MSS(font_.loadFromFile(fn), error = std::string("Could not load font from ")+fn);
+            MSS_END();
+        }
+        bool setup_description_(std::string &error)
+        {
+            MSS_BEGIN(bool);
+            description_.setFont(font_);
+            description_.setCharacterSize(30);
+            MSS_END();
+        }
+        bool layout_elements_(std::string &error)
+        {
+            MSS_BEGIN(bool);
+            sf::Rect<unsigned int> r{sf::Vector2u{}, window_.getSize()};
+            gubg::sfml::pop_border(r, 20);
+            {
+                auto rr = gubg::sfml::pop_top(r, 200);
+                gubg::sfml::set_position(description_, rr);
+            }
+            MSS_END();
+        }
+
+        std::string ctor_error_;
+
         Events *events_ = nullptr;
         sf::RenderWindow window_;
+        sf::Font font_;
+
+        sf::Text description_;
 
         std::map<std::string, sf::SoundBuffer> sound_buffers_;
         Sounds ok_sounds_;
