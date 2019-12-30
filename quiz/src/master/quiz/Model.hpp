@@ -135,10 +135,13 @@ namespace quiz {
         {
             MSS_BEGIN(bool);
 
-            score_.team__score["a"] = 0;
-            score_.team__score["b"] = 0;
-            score_.team__score["c"] = 0;
-            score_.team__score["d"] = 0;
+            if (false)
+            {
+                score_.team__score["a"] = 0;
+                score_.team__score["b"] = 0;
+                score_.team__score["c"] = 0;
+                score_.team__score["d"] = 0;
+            }
 
             {
                 Question q;

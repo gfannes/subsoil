@@ -93,8 +93,9 @@ namespace quiz {
             std::ostringstream oss;
             if (score)
             {
+                oss << "Score:" << std::endl;
                 for (const auto &p: score->team__score)
-                    oss << p.first << ": " << p.second << std::endl;
+                    oss << " team " << p.first << ": " << p.second << std::endl;
             }
             view_.set_score(oss.str());
         }
