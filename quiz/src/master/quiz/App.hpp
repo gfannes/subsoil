@@ -30,7 +30,8 @@ namespace quiz {
             MSS_END();
         }
         Model model_;
-        View view_{800, 600};
+        /* View view_{800, 600}; */
+        View view_{1800, 1200};
         Presenter presenter_{model_, view_};
     };
 

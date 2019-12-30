@@ -3,16 +3,20 @@
 
 #include <quiz/Model.hpp>
 #include <quiz/View.hpp>
+#include <gubg/OnlyOnce.hpp>
 #include <gubg/Range.hpp>
+#include <chrono>
+#include <optional>
 
 namespace quiz { 
 
-    class Presenter: public View::Events
+    class Presenter: public View::Events, public Model::Events
     {
     public:
         Presenter(Model &model, View &view): model_(model), view_(view)
         {
             view_.inject_events_receiver(this);
+            model_.inject_events_receiver(this);
         }
 
         bool quit() const {return quit_;}
@@ -23,40 +27,14 @@ namespace quiz {
 
             MSS(!quit());
 
+            if (reset_background_timepoint_ && reset_background_timepoint_.value() <= Clock::now())
+            {
+                view_.set_background_color(sf::Color::Black);
+                reset_background_timepoint_.reset();
+            }
+
             MSS(model_(error));
             MSS(view_(error));
-
-            if (start_question_)
-            {
-                start_question_ = false;
-
-                qix_ = number_.value_or(qix_+1);
-                number_.reset();
-                answer_order_.clear();
-
-                auto question = model_.get_question(qix_);
-                std::ostringstream oss;
-                if (question)
-                    oss << question->description;
-                else
-                    oss << "Error: there is no question " << qix_ << ".";
-                view_.set_description(oss.str());
-            }
-            view_.set_answer_order(answer_order_);
-
-            if (false)
-            {
-                const unsigned int count = 100;
-                if (tick_%count == 0)
-                {
-                    const auto tt = tick_/count;
-                    view_.answer_was_correct(tt%2 == 0);
-                }
-            }
-            if (false)
-                view_.set_description("How many bitches can you fit in a Tesla?\n(model 3)");
-
-            ++tick_;
 
             MSS_END();
         }
@@ -70,26 +48,55 @@ namespace quiz {
         void ve_key(char ch) override
         {
             std::cout << ch; std::flush(std::cout);
+            model_.process_char(ch);
+        }
 
-            if ('0' <= ch && ch <= '9')
+        //Model::Events implementation
+        void me_show_question(const Question *question_ptr) override
+        {
+            if (!question_ptr)
             {
-                number_ = number_.value_or(0)*10 + (ch-'0');
+                view_.set_description("");
+                view_.set_image("");
+                view_.load_music("");
+                return;
             }
-            else if ('a' <= ch && ch <= 'e')
+
+            const auto &question = *question_ptr;
+            view_.set_description(question.description);
+            view_.set_image(question.image_fn);
+            view_.load_music(question.music_fn);
+        }
+        void me_show_answer_team_order(const std::string &team, const std::string &order) override
+        {
+            view_.set_answer_team(team);
+            view_.set_answer_order(order);
+        }
+        void me_play_music(bool b) override
+        {
+            view_.play_music(b);
+        }
+        void me_answer_was_correct(bool b) override
+        {
+            view_.set_background_color(b ? sf::Color::Green : sf::Color::Red);
+            reset_background_timepoint_ = Clock::now()+std::chrono::milliseconds{2000};
+            view_.play_sound_answer_was_correct(b);
+        }
+        void me_show_error(const std::string &msg) override
+        {
+            view_.set_description(msg);
+            view_.set_image("");
+            view_.load_music("");
+        }
+        void me_show_score(const Score *score) override
+        {
+            std::ostringstream oss;
+            if (score)
             {
-                if (answer_order_.find(ch) == std::string::npos)
-                    answer_order_.push_back(ch);
+                for (const auto &p: score->team__score)
+                    oss << p.first << ": " << p.second << std::endl;
             }
-            else if (ch == 'q')
-            {
-                start_question_ = true;
-            }
-            else if (ch == 'x')
-            {
-            }
-            else if (ch == 'v')
-            {
-            }
+            view_.set_score(oss.str());
         }
 
     private:
@@ -97,12 +104,8 @@ namespace quiz {
         Model &model_;
         View &view_;
 
-        int qix_ = -1;
-
-        std::optional<unsigned int> number_;
-        bool start_question_ = false;
-        unsigned int tick_ = 0;
-        std::string answer_order_;
+        using Clock = std::chrono::system_clock;
+        std::optional<Clock::time_point> reset_background_timepoint_;
     };
 
 } 

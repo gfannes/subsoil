@@ -2,6 +2,7 @@
 #define HEADER_quiz_Question_hpp_ALREADY_INCLUDED
 
 #include <string>
+#include <optional>
 
 namespace quiz { 
 
@@ -9,6 +10,9 @@ namespace quiz {
     {
     public:
         std::string description;
+        std::string image_fn;
+        std::string music_fn;
+        float pitch = 1.0f;
 
     private:
     };
