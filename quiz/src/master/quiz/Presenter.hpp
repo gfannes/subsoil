@@ -65,7 +65,7 @@ namespace quiz {
             const auto &question = *question_ptr;
             view_.set_description(question.description);
             view_.set_image(question.image_fn);
-            view_.load_music(question.music_fn);
+            view_.load_music(question.music_fn, question.pitch);
         }
         void me_show_answer_team_order(const std::string &team, const std::string &order) override
         {

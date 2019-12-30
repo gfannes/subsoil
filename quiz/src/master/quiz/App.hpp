@@ -2,6 +2,7 @@
 #define HEADER_quiz_App_hpp_ALREADY_INCLUDED
 
 #include <gubg/mss.hpp>
+#include <quiz/Options.hpp>
 #include <quiz/Presenter.hpp>
 #include <thread>
 #include <chrono>
@@ -11,6 +12,18 @@ namespace quiz {
     class App
     {
     public:
+        bool process(const Options &options, std::string &error)
+        {
+            MSS_BEGIN(bool);
+            if (options.buttons_device)
+            {
+                gubg::serial::Settings serial_settings;
+                serial_settings.baud_rate = options.baudrate.value_or(9600);
+                MSS(view_.connect_to_buttons(*options.buttons_device, serial_settings), error = "could not connect to buttons");
+            }
+            MSS_END();
+        }
+
         bool operator()(std::string &error)
         {
             if (presenter_.quit())

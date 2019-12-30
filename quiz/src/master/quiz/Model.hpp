@@ -20,7 +20,7 @@ namespace quiz {
         switch (state)
         {
 #define x(name) case State::name: os << #name; break;
-        unroll(x)
+            unroll(x)
 #undef x
         }
         return os;
@@ -53,9 +53,8 @@ namespace quiz {
         {
             MSS_BEGIN(bool);
 
-            MSS(!!events_);
-
             MSS(ctor_error_.empty(), error = ctor_error_);
+            MSS(!!events_, error = "Model.events_ not set");
 
             if (answer_team_.empty() && !answer_order_.empty())
             {
@@ -148,6 +147,7 @@ namespace quiz {
                 q.description = "How many bitches can you fit in a Tesla?";
                 q.image_fn = "quiz/media/question/mrbean.jpg";
                 q.music_fn = "quiz/media/question/music.wav";
+                q.pitch = 2.0f;
                 questions_.push_back(q);
             }
 
@@ -162,7 +162,7 @@ namespace quiz {
             if (new_state == state_)
                 return true;
 
-            MSS(!!events_);
+            MSS(!!events_, error = "Model.events_ not set");
 
             std::cout << "Changing state from " << state_ << " to " << new_state << std::endl;
 
@@ -192,13 +192,13 @@ namespace quiz {
                     break;
                 case State::NewQuestion:
                     {
-                        qix_ = number_.value_or(qix_+1);
+                        question_ix_ = number_.value_or(question_ix_+1);
                         number_.reset();
                         answer_team_.clear();
                         answer_order_.clear();
 
-                        auto question = get_question_(qix_);
-                        MSS(!!question, error = std::string("there is no question ")+std::to_string(qix_));
+                        auto question = get_question_(question_ix_);
+                        MSS(!!question, error = std::string("there is no question ")+std::to_string(question_ix_));
                         events_->me_show_question(question);
 
                         return change_state_(State::Thinking, error);
@@ -221,7 +221,7 @@ namespace quiz {
         std::string sm_error_;
         std::vector<Question> questions_;
 
-        int qix_ = -1;
+        int question_ix_ = -1;
 
         std::optional<unsigned int> number_;
         std::string answer_team_;

@@ -4,6 +4,7 @@
 #include <gubg/sfml/layout.hpp>
 #include <gubg/mss.hpp>
 #include <gubg/prob/Uniform.hpp>
+#include <gubg/serial/Endpoint.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <memory>
@@ -31,6 +32,14 @@ namespace quiz {
         }
 
         void inject_events_receiver(Events *events) {events_ = events;}
+
+        bool connect_to_buttons(const std::string &device, const gubg::serial::Settings &settings)
+        {
+            MSS_BEGIN(bool);
+            buttons_.emplace();
+            MSS(buttons_->open(device.c_str(), settings));
+            MSS_END();
+        }
         void close() {window_.close();}
         void play_sound_answer_was_correct(bool b)
         {
@@ -123,35 +132,49 @@ namespace quiz {
         bool process_events_(std::string &error)
         {
             MSS_BEGIN(bool);
+
             MSS(!!events_, error = "View.events_ not set");
-            sf::Event event;
-            while (window_.pollEvent(event))
+
             {
-                switch (event.type)
+                sf::Event event;
+                while (window_.pollEvent(event))
                 {
-                    case sf::Event::Closed:
-                        events_->ve_close();
-                        break;
-                    case sf::Event::KeyReleased:
-                        switch (event.key.code)
-                        {
+                    switch (event.type)
+                    {
+                        case sf::Event::Closed:
+                            events_->ve_close();
+                            break;
+                        case sf::Event::KeyReleased:
+                            switch (event.key.code)
+                            {
 #define l_case(key,ch) case sf::Keyboard::Key::key: events_->ve_key(ch); break
-                            l_case(Space,' ');
+                                l_case(Space,' ');
 #define unroll(x) x(Q) x(X) x(V) x(A) x(B) x(C) x(D) x(E)
 #define x(n) l_case(n,#n[0]+'a'-'A');
-                            unroll(x)
+                                unroll(x)
 #undef x
 #undef unroll
 
 #define unroll(x) x(0) x(1) x(2) x(3) x(4) x(5) x(6) x(7) x(8) x(9)
 #define x(n) l_case(Num ## n,#n[0]);
-                            unroll(x)
+                                unroll(x)
 #undef x
 #undef unroll
-                        }
-                        break;
+                            }
+                            break;
+                    }
                 }
             }
+
+            if (buttons_)
+            {
+                std::array<char, 16> buffer;
+                size_t offset = 0;
+                MSS(buttons_->receive(offset, buffer.data(), buffer.size()));
+                for (auto i = 0; i < offset; ++i)
+                    events_->ve_key(buffer[i]);
+            }
+
             MSS_END();
         }
         bool draw_(std::string &error)
@@ -315,6 +338,8 @@ namespace quiz {
         Sounds ko_sounds_;
         Sounds playing_sounds_;
         std::optional<sf::Music> music_;
+
+        std::optional<gubg::serial::Endpoint> buttons_;
     };
 
 } 
