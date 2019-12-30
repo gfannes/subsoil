@@ -19,12 +19,14 @@ namespace quiz {
         {
         public:
             virtual void ve_close() = 0;
+            virtual void ve_key(char) = 0;
         };
 
         View(unsigned int width, unsigned int height)
         : window_(sf::VideoMode{width, height}, "Quiz master")
         {
-            construct_(ctor_error_);
+            if (!construct_(ctor_error_) && ctor_error_.empty())
+                ctor_error_ = "Unknown construction error for View";
         }
 
         void inject_events_receiver(Events *events) {events_ = events;}
@@ -67,8 +69,29 @@ namespace quiz {
             sf::Event event;
             while (window_.pollEvent(event))
             {
-                if (event.type == sf::Event::Closed)
-                    events_->ve_close();
+                switch (event.type)
+                {
+                    case sf::Event::Closed:
+                        events_->ve_close();
+                        break;
+                    case sf::Event::KeyReleased:
+                        switch (event.key.code)
+                        {
+#define l_case(key,ch) case sf::Keyboard::Key::key: events_->ve_key(ch); break
+#define unroll(x) x(Q) x(X) x(V) x(A) x(B) x(C) x(D) x(E)
+#define x(n) l_case(n,#n[0]+'a'-'A');
+                            unroll(x)
+#undef x
+#undef unroll
+
+#define unroll(x) x(0) x(1) x(2) x(3) x(4) x(5) x(6) x(7) x(8) x(9)
+#define x(n) l_case(Num ## n,#n[0]);
+                            unroll(x)
+#undef x
+#undef unroll
+                        }
+                        break;
+                }
             }
             MSS_END();
         }

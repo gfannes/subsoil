@@ -15,12 +15,31 @@ namespace quiz {
         }
 
         bool quit() const {return quit_;}
+
         bool operator()(std::string &error)
         {
             MSS_BEGIN(bool);
+
             MSS(!quit());
+
             MSS(model_(error));
             MSS(view_(error));
+
+            if (start_question_)
+            {
+                start_question_ = false;
+
+                qix_ = number_.value_or(qix_+1);
+                number_.reset();
+
+                auto question = model_.get_question(qix_);
+                std::ostringstream oss;
+                if (question)
+                    oss << question->description;
+                else
+                    oss << "Error: there is no question " << qix_ << ".";
+                view_.set_description(oss.str());
+            }
 
             if (false)
             {
@@ -31,9 +50,11 @@ namespace quiz {
                     view_.answer_was_correct(tt%2 == 0);
                 }
             }
-            view_.set_description("How many bitches can you fit in a Tesla?\n(model 3)");
+            if (false)
+                view_.set_description("How many bitches can you fit in a Tesla?\n(model 3)");
 
             ++tick_;
+
             MSS_END();
         }
 
@@ -43,12 +64,38 @@ namespace quiz {
             quit_ = true;
             view_.close();
         }
+        void ve_key(char ch) override
+        {
+            std::cout << ch; std::flush(std::cout);
+
+            if ('0' <= ch && ch <= '9')
+            {
+                number_ = number_.value_or(0)*10 + (ch-'0');
+            }
+            else if ('a' <= ch && ch <= 'e')
+            {
+            }
+            else if (ch == 'q')
+            {
+                start_question_ = true;
+            }
+            else if (ch == 'x')
+            {
+            }
+            else if (ch == 'v')
+            {
+            }
+        }
 
     private:
         bool quit_ = false;
         Model &model_;
         View &view_;
 
+        int qix_ = -1;
+
+        std::optional<unsigned int> number_;
+        bool start_question_ = false;
         unsigned int tick_ = 0;
     };
 
