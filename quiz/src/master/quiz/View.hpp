@@ -38,10 +38,8 @@ namespace quiz {
             stop_(playing_sounds_);
             play_(sound);
         }
-        void set_description(const std::string &descr)
-        {
-            description_.setString(descr);
-        }
+        void set_description(const std::string &descr) { description_.setString(descr); }
+        void set_answer_order(const std::string &order) { answer_order_.setString(order); }
 
         bool operator()(std::string &error)
         {
@@ -100,6 +98,7 @@ namespace quiz {
             MSS_BEGIN(bool);
             window_.clear(sf::Color::Black);
             window_.draw(description_);
+            window_.draw(answer_order_);
             window_.display();
             MSS_END();
         }
@@ -128,7 +127,7 @@ namespace quiz {
             MSS_BEGIN(bool);
             MSS(load_sounds_(error));
             MSS(load_font_(error));
-            MSS(setup_description_(error));
+            MSS(setup_texts_(error));
             MSS(layout_elements_(error));
             MSS_END();
         }
@@ -160,11 +159,13 @@ namespace quiz {
             MSS(font_.loadFromFile(fn), error = std::string("Could not load font from ")+fn);
             MSS_END();
         }
-        bool setup_description_(std::string &error)
+        bool setup_texts_(std::string &error)
         {
             MSS_BEGIN(bool);
             description_.setFont(font_);
             description_.setCharacterSize(30);
+            answer_order_.setFont(font_);
+            answer_order_.setCharacterSize(30);
             MSS_END();
         }
         bool layout_elements_(std::string &error)
@@ -176,6 +177,10 @@ namespace quiz {
                 auto rr = gubg::sfml::pop_top(r, 200);
                 gubg::sfml::set_position(description_, rr);
             }
+            {
+                auto rr = gubg::sfml::pop_top(r, 30);
+                gubg::sfml::set_position(answer_order_, rr);
+            }
             MSS_END();
         }
 
@@ -186,6 +191,7 @@ namespace quiz {
         sf::Font font_;
 
         sf::Text description_;
+        sf::Text answer_order_;
 
         std::map<std::string, sf::SoundBuffer> sound_buffers_;
         Sounds ok_sounds_;

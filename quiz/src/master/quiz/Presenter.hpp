@@ -3,6 +3,7 @@
 
 #include <quiz/Model.hpp>
 #include <quiz/View.hpp>
+#include <gubg/Range.hpp>
 
 namespace quiz { 
 
@@ -31,6 +32,7 @@ namespace quiz {
 
                 qix_ = number_.value_or(qix_+1);
                 number_.reset();
+                answer_order_.clear();
 
                 auto question = model_.get_question(qix_);
                 std::ostringstream oss;
@@ -40,6 +42,7 @@ namespace quiz {
                     oss << "Error: there is no question " << qix_ << ".";
                 view_.set_description(oss.str());
             }
+            view_.set_answer_order(answer_order_);
 
             if (false)
             {
@@ -74,6 +77,8 @@ namespace quiz {
             }
             else if ('a' <= ch && ch <= 'e')
             {
+                if (answer_order_.find(ch) == std::string::npos)
+                    answer_order_.push_back(ch);
             }
             else if (ch == 'q')
             {
@@ -97,6 +102,7 @@ namespace quiz {
         std::optional<unsigned int> number_;
         bool start_question_ = false;
         unsigned int tick_ = 0;
+        std::string answer_order_;
     };
 
 } 
