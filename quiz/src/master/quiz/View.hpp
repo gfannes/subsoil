@@ -280,12 +280,12 @@ namespace quiz {
             {
                 auto rr = pop_top(r, 0.8*height);
                 /* image_.rect = rr; */
-                set_position(answer_team_, pop_left(rr, 0.9*width));
-                set_position(score_,       pop_left(rr, 0.1*width));
             }
             {
                 auto rr = pop_top(r, 0.1*height);
-                set_position(answer_order_, rr);
+                set_position(answer_team_,  pop_left(rr, 0.3*width));
+                set_position(answer_order_, pop_left(rr, 0.3*width));
+                set_position(score_,        pop_left(rr, 0.4*width));
             }
 
             MSS_END();

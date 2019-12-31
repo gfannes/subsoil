@@ -100,11 +100,20 @@ namespace quiz {
                 MSS(change_state_(State::NewQuestion, sm_error_));
             else if ('a' <= ch && ch <= 'e')
             {
-                if (answer_order_.find(ch) != std::string::npos)
-                    return true;
-                if (!answer_team_.empty() && answer_team_[0] == ch)
-                    return true;
-                answer_order_.push_back(ch);
+                switch (state_)
+                {
+                    case State::Idle:
+                    case State::Error:
+                        return true;
+                        break;
+                    default:
+                        if (answer_order_.find(ch) != std::string::npos)
+                            return true;
+                        if (!answer_team_.empty() && answer_team_[0] == ch)
+                            return true;
+                        answer_order_.push_back(ch);
+                        break;
+                }
             }
             else if (ch == 'x')
             {
