@@ -151,14 +151,21 @@ namespace quiz {
                 score_.team__score["d"] = 0;
             }
 
+            const std::string folder = "quiz/media/question/";
+            auto add_question = [&](const std::string &description, const std::string &image_fn = "", const std::string &music_fn = "", float pitch = 1.0f)
             {
                 Question q;
-                q.description = "How many bitches can you fit in a Tesla?";
-                q.image_fn = "quiz/media/question/mrbean.jpg";
-                q.music_fn = "quiz/media/question/music.wav";
-                q.pitch = 2.0f;
+                q.description = description;
+                if (!image_fn.empty())
+                    q.image_fn = folder+image_fn;
+                if (!music_fn.empty())
+                    q.music_fn = folder+music_fn;
+                q.pitch = pitch;
                 questions_.push_back(q);
-            }
+            };
+            add_question("How many bitches can you fit in a Tesla?", "mrbean.jpg", "music.wav", 2.0f);
+            add_question("Vertaal vanuit het Azarts", "azart_spaghetti.png");
+            add_question("Vertaal vanuit het Azarts", "azart_hypothenuse.png");
 
             MSS_END();
         }
