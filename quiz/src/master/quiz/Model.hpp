@@ -163,9 +163,25 @@ namespace quiz {
                 q.pitch = pitch;
                 questions_.push_back(q);
             };
-            add_question("How many bitches can you fit in a Tesla?", "mrbean.jpg", "music.wav", 2.0f);
+            add_question("How many bitches can you fit in a Tesla?");
             add_question("Vertaal vanuit het Azarts", "azart_spaghetti.png");
             add_question("Vertaal vanuit het Azarts", "azart_hypothenuse.png");
+            add_question("Doe de vergelijking kloppen", "1000 = \n8 8 8 8 8 8 8 8\nGebruik enkel: + - x : ( )");
+            add_question("Vl dz vrg n mt d jst mdklnkrs: drk f n rp ht wrd \"spghtt\"");
+            add_question("Welke sport horen we hier?", "", "morse_high_speed_telegraphy.ogg");
+            add_question("Hoeveel symbolen worden er in Morse code gebruikt?");
+            add_question("Welk woord horen we hier?", "", "morse_winawinterweekend.ogg");
+            add_question("Teken hetvolgende symbool", "complete_12345.png");
+
+            //Fast round
+            add_question("Ork, ork, ork, soep uit je met een ...?");
+
+            //Spoiler alert
+            add_question("Wie is de opa van Rey uit StarWars?");
+            add_question("Wat gebeurt er op het einde van elke 5TV film?");
+
+            //Doe-ronde
+            add_question("Maak vormpje in lego na");
 
             MSS_END();
         }
