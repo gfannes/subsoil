@@ -152,16 +152,17 @@ namespace quiz {
             }
 
             const std::string folder = "quiz/media/question/";
-            auto add_question = [&](const std::string &description, const std::string &image_fn = "", const std::string &music_fn = "", float pitch = 1.0f)
+            auto add_question = [&](const std::string &title, const std::string &image_fn = "", const std::string &music_fn = "", float pitch = 1.0f) -> Question&
             {
                 Question q;
-                q.description = description;
+                q.title = title;
                 if (!image_fn.empty())
                     q.image_fn = folder+image_fn;
                 if (!music_fn.empty())
                     q.music_fn = folder+music_fn;
                 q.pitch = pitch;
                 questions_.push_back(q);
+                return questions_.back();
             };
             add_question("How many bitches can you fit in a Tesla?");
             add_question("Vertaal vanuit het Azarts", "azart_spaghetti.png");
@@ -172,16 +173,29 @@ namespace quiz {
             add_question("Hoeveel symbolen worden er in Morse code gebruikt?");
             add_question("Welk woord horen we hier?", "", "morse_winawinterweekend.ogg");
             add_question("Teken hetvolgende symbool", "complete_12345.png");
+            add_question("Geef hetvolgende cijfer", "3.141592");
+
+            //Wie ben ik
+            {
+                auto &q = add_question("Wie ben ik?");
+                q.descriptions.emplace_back("Ik ben geboren in de middeleeuwen");
+                q.descriptions.emplace_back("Ik ben katholiek");
+                q.descriptions.emplace_back("Heel veel mensen komen dagelijks naar mij kijken");
+                q.descriptions.emplace_back("Victor Hugo heeft een verhaaltje over mij geschreven");
+                q.descriptions.emplace_back("Ik woon op een eiland");
+                q.descriptions.emplace_back("Vorige lente had ik last van een brandje");
+                q.descriptions.emplace_back("Ik woon in Parijs");
+            }
 
             //Fast round
             add_question("Ork, ork, ork, soep uit je met een ...?");
 
             //Spoiler alert
-            add_question("Wie is de opa van Rey uit StarWars?");
+            add_question("Wie is de opa van Rey uit Star Wars?");
             add_question("Wat gebeurt er op het einde van elke 5TV film?");
 
             //Doe-ronde
-            add_question("Maak vormpje in lego na");
+            add_question("Maak het vormpje in lego na");
 
             MSS_END();
         }

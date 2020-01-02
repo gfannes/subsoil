@@ -56,14 +56,14 @@ namespace quiz {
         {
             if (!question_ptr)
             {
-                view_.set_description("");
+                view_.set_title("");
                 view_.set_image("");
                 view_.load_music("");
                 return;
             }
 
             const auto &question = *question_ptr;
-            view_.set_description(question.description);
+            view_.set_title(question.title);
             view_.set_image(question.image_fn);
             view_.load_music(question.music_fn, question.pitch);
         }
@@ -84,7 +84,7 @@ namespace quiz {
         }
         void me_show_error(const std::string &msg) override
         {
-            view_.set_description(msg);
+            view_.set_title(msg);
             view_.set_image("");
             view_.load_music("");
         }

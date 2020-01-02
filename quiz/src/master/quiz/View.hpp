@@ -52,7 +52,7 @@ namespace quiz {
         {
             background_color_ = color;
         }
-        void set_description(const std::string &descr) { description_.setString(descr); }
+        void set_title(const std::string &title) { title_.setString(title); }
         void set_answer_team(const std::string &team)
         {
             std::string str;
@@ -183,7 +183,7 @@ namespace quiz {
             window_.clear(background_color_);
             if (image_.show)
                 window_.draw(image_.sprite);
-            window_.draw(description_);
+            window_.draw(title_);
             window_.draw(answer_team_);
             window_.draw(answer_order_);
             window_.draw(score_);
@@ -250,8 +250,8 @@ namespace quiz {
         bool setup_texts_(std::string &error)
         {
             MSS_BEGIN(bool);
-            description_.setFont(font_);
-            description_.setCharacterSize(30);
+            title_.setFont(font_);
+            title_.setCharacterSize(30);
             answer_team_.setFont(font_);
             answer_team_.setCharacterSize(100);
             answer_order_.setFont(font_);
@@ -275,7 +275,7 @@ namespace quiz {
 
             {
                 auto rr = pop_top(r, 0.1*height);
-                set_position(description_, rr);
+                set_position(title_, rr);
             }
             {
                 auto rr = pop_top(r, 0.8*height);
@@ -298,7 +298,7 @@ namespace quiz {
         sf::Color background_color_ = sf::Color::Black;
         sf::Font font_;
 
-        sf::Text description_;
+        sf::Text title_;
         sf::Text answer_team_;
         sf::Text answer_order_;
         sf::Text score_;
