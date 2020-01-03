@@ -172,7 +172,7 @@ namespace :quiz do
     end
     desc "Quiz master"
     task :master do
-        cooker().generate(:ninja, "quiz/master").ninja().run()
+        cooker().generate(:ninja, "quiz/master").ninja().run("-p", "-10,0")
         # cooker().generate(:ninja, "quiz/master").ninja().run("-t", "/dev/ttyACM0", "-b", 9600)
     end
 end

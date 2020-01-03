@@ -2,6 +2,8 @@
 #define HEADER_quiz_View_hpp_ALREADY_INCLUDED
 
 #include <gubg/sfml/layout.hpp>
+#include <gubg/sfml/FontMgr.hpp>
+#include <gubg/sfml/Label.hpp>
 #include <gubg/mss.hpp>
 #include <gubg/prob/Uniform.hpp>
 #include <gubg/serial/Endpoint.hpp>
@@ -25,13 +27,17 @@ namespace quiz {
         };
 
         View(unsigned int width, unsigned int height)
-        : window_(sf::VideoMode{width, height}, "Quiz master")
+        : window_(sf::VideoMode{width, height}, "Quiz master", sf::Style::Default)
         {
             if (!construct_(ctor_error_) && ctor_error_.empty())
                 ctor_error_ = "Unknown construction error for View";
         }
 
         void inject_events_receiver(Events *events) {events_ = events;}
+        void set_position(const std::pair<int,int> pos)
+        {
+            window_.setPosition(sf::Vector2i{pos.first, pos.second});
+        }
 
         bool connect_to_buttons(const std::string &device, const gubg::serial::Settings &settings)
         {
@@ -52,16 +58,23 @@ namespace quiz {
         {
             background_color_ = color;
         }
-        void set_title(const std::string &title) { title_.setString(title); }
+        void set_title(const std::string &title) { title_.set_string(title); }
+        void set_description(const std::string &description) { description_.set_string(description); }
         void set_answer_team(const std::string &team)
         {
             std::string str;
             if (!team.empty())
-                str = std::string("Team: ")+team;
-            answer_team_.setString(str);
+                str = std::string("Answer: ")+team;
+            answer_team_.set_string(str);
         }
-        void set_answer_order(const std::string &order) { answer_order_.setString(order); }
-        void set_score(const std::string &score) { score_.setString(score); }
+        void set_answer_order(const std::string &order)
+        {
+            std::string str;
+            if (!order.empty())
+                str = std::string("Next: ")+order;
+            answer_order_.set_string(str);
+        }
+        void set_score(const std::string &score) { score_.set_string(score); }
         bool set_image(const std::string &fn)
         {
             MSS_BEGIN(bool);
@@ -89,10 +102,11 @@ namespace quiz {
             }
             MSS_END();
         }
-        bool play_music(bool b)
+        bool play_music(bool b, bool restart = false)
         {
             MSS_BEGIN(bool);
-            MSS(!!music_);
+            if (!music_)
+                return true;
             auto &music = music_.value();
             if (b)
                 switch (music.getStatus())
@@ -102,6 +116,8 @@ namespace quiz {
                         music.play();
                         break;
                     case sf::SoundSource::Playing:
+                        if (restart)
+                            music.play();
                         break;
                 }
             else
@@ -148,8 +164,9 @@ namespace quiz {
                             switch (event.key.code)
                             {
 #define l_case(key,ch) case sf::Keyboard::Key::key: events_->ve_key(ch); break
-                                l_case(Space,' ');
-#define unroll(x) x(Q) x(X) x(V) x(A) x(B) x(C) x(D) x(E)
+                                l_case(Space, ' ');
+                                l_case(Escape, 27);
+#define unroll(x) x(Q) x(X) x(V) x(A) x(B) x(C) x(D) x(E) x(R)
 #define x(n) l_case(n,#n[0]+'a'-'A');
                                 unroll(x)
 #undef x
@@ -183,10 +200,11 @@ namespace quiz {
             window_.clear(background_color_);
             if (image_.show)
                 window_.draw(image_.sprite);
-            window_.draw(title_);
-            window_.draw(answer_team_);
-            window_.draw(answer_order_);
-            window_.draw(score_);
+            title_.draw(window_);
+            description_.draw(window_);
+            score_.draw(window_);
+            answer_team_.draw(window_);
+            answer_order_.draw(window_);
             window_.display();
             MSS_END();
         }
@@ -244,20 +262,18 @@ namespace quiz {
         {
             MSS_BEGIN(bool);
             const auto fn = "quiz/media/font/GenR102.TTF";
-            MSS(font_.loadFromFile(fn), error = std::string("Could not load font from ")+fn);
+            MSS(font_mgr_.load_font(fn, "myfont"), error = std::string("Could not load font from ")+fn);
             MSS_END();
         }
         bool setup_texts_(std::string &error)
         {
             MSS_BEGIN(bool);
-            title_.setFont(font_);
-            title_.setCharacterSize(30);
-            answer_team_.setFont(font_);
-            answer_team_.setCharacterSize(100);
-            answer_order_.setFont(font_);
-            answer_order_.setCharacterSize(30);
-            score_.setFont(font_);
-            score_.setCharacterSize(30);
+            auto font = font_mgr_.get_font("myfont");
+            title_.set_font(font);
+            description_.set_font(font);
+            score_.set_font(font);
+            answer_team_.set_font(font);
+            answer_order_.set_font(font);
             MSS_END();
         }
         bool layout_elements_(std::string &error)
@@ -269,23 +285,29 @@ namespace quiz {
             Rectu r{sf::Vector2u{}, window_.getSize()};
 
             pop_border(r, 20);
-            image_.rect = r;
             const auto height = r.height;
             const auto width = r.width;
 
             {
                 auto rr = pop_top(r, 0.1*height);
-                set_position(title_, rr);
+                set_bb(title_, rr);
+                set_bb(score_, rr);
             }
             {
                 auto rr = pop_top(r, 0.8*height);
-                /* image_.rect = rr; */
+                image_.rect = rr;
+                image_.rect.height += 0.1*height;
+                {
+                    auto rrr = pop_left(rr, 0.7*rr.width);
+                    pop_top(rrr, 0.1*rrr.height);
+                    set_bb(description_, pop_top(rrr, 0.2*rrr.height));
+                }
             }
             {
                 auto rr = pop_top(r, 0.1*height);
-                set_position(answer_team_,  pop_left(rr, 0.3*width));
-                set_position(answer_order_, pop_left(rr, 0.3*width));
-                set_position(score_,        pop_left(rr, 0.4*width));
+                set_bb(answer_team_,  pop_left(rr, 0.3*width));
+                pop_left(rr, 0.3*width);
+                set_bb(answer_order_, pop_left(rr, 0.4*width));
             }
 
             MSS_END();
@@ -296,12 +318,14 @@ namespace quiz {
         Events *events_ = nullptr;
         sf::RenderWindow window_;
         sf::Color background_color_ = sf::Color::Black;
+        gubg::sfml::FontMgr font_mgr_;
         sf::Font font_;
 
-        sf::Text title_;
-        sf::Text answer_team_;
-        sf::Text answer_order_;
-        sf::Text score_;
+        gubg::sfml::Label title_;
+        gubg::sfml::Label description_;
+        gubg::sfml::Label score_;
+        gubg::sfml::Label answer_team_;
+        gubg::sfml::Label answer_order_;
 
         struct Image
         {

@@ -57,6 +57,7 @@ namespace quiz {
             if (!question_ptr)
             {
                 view_.set_title("");
+                view_.set_description("");
                 view_.set_image("");
                 view_.load_music("");
                 return;
@@ -64,6 +65,10 @@ namespace quiz {
 
             const auto &question = *question_ptr;
             view_.set_title(question.title);
+            if (question.descriptions.empty())
+                view_.set_description("");
+            else
+                view_.set_description(question.descriptions[0]);
             view_.set_image(question.image_fn);
             view_.load_music(question.music_fn, question.pitch);
         }
@@ -72,9 +77,9 @@ namespace quiz {
             view_.set_answer_team(team);
             view_.set_answer_order(order);
         }
-        void me_play_music(bool b) override
+        void me_play_music(bool b, bool restart) override
         {
-            view_.play_music(b);
+            view_.play_music(b, restart);
         }
         void me_answer_was_correct(bool b) override
         {
@@ -85,6 +90,8 @@ namespace quiz {
         void me_show_error(const std::string &msg) override
         {
             view_.set_title(msg);
+            view_.set_description("");
+            view_.set_score("");
             view_.set_image("");
             view_.load_music("");
         }

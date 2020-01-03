@@ -21,6 +21,8 @@ namespace quiz {
                 serial_settings.baud_rate = options.baudrate.value_or(9600);
                 MSS(view_.connect_to_buttons(*options.buttons_device, serial_settings), error = "could not connect to buttons");
             }
+            if (options.position)
+                view_.set_position(options.position.value());
             MSS_END();
         }
 

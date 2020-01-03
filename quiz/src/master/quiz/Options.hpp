@@ -2,6 +2,7 @@
 #define HEADER_quiz_Options_hpp_ALREADY_INCLUDED
 
 #include <gubg/mss.hpp>
+#include <gubg/Strange.hpp>
 #include <optional>
 #include <sstream>
 
@@ -15,6 +16,7 @@ namespace quiz {
         bool print_help = false;
         std::optional<std::string> buttons_device;
         std::optional<unsigned int> baudrate;
+        std::optional<std::pair<int,int>> position;
 
         bool parse(int argc, const char **argv)
         {
@@ -36,6 +38,15 @@ namespace quiz {
                 else if (arg == "-h") { print_help = true; }
                 else if (arg == "-t") { buttons_device = pop_arg(); }
                 else if (arg == "-b") { baudrate = std::stoul(pop_arg()); }
+                else if (arg == "-p")
+                {
+                    gubg::Strange strange{pop_arg()};
+                    std::pair<int,int> pos;
+                    MSS(strange.pop_decimal(pos.first));
+                    MSS(strange.pop_if(','));
+                    MSS(strange.pop_decimal(pos.second));
+                    position = pos;
+                }
             }
 
             MSS_END();

@@ -35,7 +35,7 @@ namespace quiz {
         public:
             virtual void me_show_question(const Question *question_ptr) = 0;
             virtual void me_show_answer_team_order(const std::string &team, const std::string &order) = 0;
-            virtual void me_play_music(bool b) = 0;
+            virtual void me_play_music(bool b, bool restart) = 0;
             virtual void me_answer_was_correct(bool b) = 0;
             virtual void me_show_error(const std::string &msg) = 0;
             virtual void me_show_score(const Score *score) = 0;
@@ -64,7 +64,7 @@ namespace quiz {
             }
 
             events_->me_show_answer_team_order(answer_team_, answer_order_);
-            events_->me_show_score(&score_);
+            events_->me_show_score(state_ == State::Idle ? &score_ : nullptr);
 
             MSS_END();
         }
@@ -133,8 +133,23 @@ namespace quiz {
                     MSS(change_state_(State::Idle, sm_error_));
                 }
             }
-            else if (ch == ' ')
+            else if (ch == 27)
                 MSS(change_state_(State::Idle, sm_error_));
+            else if (ch == ' ')
+            {
+                if (current_question_)
+                {
+                    auto &question = current_question_.value();
+                    auto it = question.descriptions.begin();
+                    if (it != question.descriptions.end())
+                    {
+                        question.descriptions.erase(it);
+                    }
+                    events_->me_show_question(&question);
+                }
+            }
+            else if (ch == 'r')
+                events_->me_play_music(true, true);
 
             MSS_END();
         }
@@ -152,50 +167,64 @@ namespace quiz {
             }
 
             const std::string folder = "quiz/media/question/";
-            auto add_question = [&](const std::string &title, const std::string &image_fn = "", const std::string &music_fn = "", float pitch = 1.0f) -> Question&
+            auto add_text = [&](const std::string &title, const std::string &descr = "") -> Question&
             {
                 Question q;
                 q.title = title;
-                if (!image_fn.empty())
-                    q.image_fn = folder+image_fn;
-                if (!music_fn.empty())
-                    q.music_fn = folder+music_fn;
+                if (!descr.empty())
+                    q.descriptions.push_back(descr);
+                questions_.push_back(q);
+                return questions_.back();
+            };
+            auto add_image = [&](const std::string &title, const std::string &image_fn) -> Question&
+            {
+                Question q;
+                q.title = title;
+                q.image_fn = folder+image_fn;
+                questions_.push_back(q);
+                return questions_.back();
+            };
+            auto add_music = [&](const std::string &title, const std::string &music_fn, float pitch = 1.0f) -> Question&
+            {
+                Question q;
+                q.title = title;
+                q.music_fn = folder+music_fn;
                 q.pitch = pitch;
                 questions_.push_back(q);
                 return questions_.back();
             };
-            add_question("How many bitches can you fit in a Tesla?");
-            add_question("Vertaal vanuit het Azarts", "azart_spaghetti.png");
-            add_question("Vertaal vanuit het Azarts", "azart_hypothenuse.png");
-            add_question("Doe de vergelijking kloppen", "1000 = \n8 8 8 8 8 8 8 8\nGebruik enkel: + - x : ( )");
-            add_question("Vl dz vrg n mt d jst mdklnkrs: drk f n rp ht wrd \"spghtt\"");
-            add_question("Welke sport horen we hier?", "", "morse_high_speed_telegraphy.ogg");
-            add_question("Hoeveel symbolen worden er in Morse code gebruikt?");
-            add_question("Welk woord horen we hier?", "", "morse_winawinterweekend.ogg");
-            add_question("Teken hetvolgende symbool", "complete_12345.png");
-            add_question("Geef hetvolgende cijfer", "3.141592");
+            add_text("Leefwereld van je kinderen", "How many bitches\ncan you fit in a Tesla?");
+            add_image("Vertaal vanuit het Azarts", "azart_spaghetti.png");
+            add_image("Leg dit begrip uit", "azart_hypotenusa.png");
+            add_text("Doe de vergelijking kloppen", "1000 = \n8 8 8 8 8 8 8 8\nGebruik enkel:\n+ - x : ( ) of niets");
+            add_text("Roepen maar", "Vl dz vrg n mt\nd jst mdklnkrs:\ndrk f n rp ht wrd\n\"spghtt\"");
+            add_music("Welke sport horen we hier?", "morse_high_speed_telegraphy.ogg");
+            add_text("", "Hoeveel symbolen\nworden erin\nMorse code gebruikt?");
+            add_music("Welk woord horen we hier?", "morse_winawinterweekend.ogg");
+            add_image("Teken hetvolgende symbool", "complete_12345.png");
+            add_text("Geef hetvolgende cijfer", "3.141592");
 
             //Wie ben ik
             {
-                auto &q = add_question("Wie ben ik?");
-                q.descriptions.emplace_back("Ik ben geboren in de middeleeuwen");
+                auto &q = add_text("Wie ben ik?");
+                q.descriptions.emplace_back("Ik ben geboren in\nde middeleeuwen");
                 q.descriptions.emplace_back("Ik ben katholiek");
-                q.descriptions.emplace_back("Heel veel mensen komen dagelijks naar mij kijken");
-                q.descriptions.emplace_back("Victor Hugo heeft een verhaaltje over mij geschreven");
-                q.descriptions.emplace_back("Ik woon op een eiland");
-                q.descriptions.emplace_back("Vorige lente had ik last van een brandje");
-                q.descriptions.emplace_back("Ik woon in Parijs");
+                q.descriptions.emplace_back("Heel veel mensen\nkomen dagelijks\nnaar mij kijken");
+                q.descriptions.emplace_back("Victor Hugo heeft\neen verhaaltje over\nmij geschreven");
+                q.descriptions.emplace_back("Ik woon op\neen eiland");
+                q.descriptions.emplace_back("Vorige lente had\nik last van een brandje");
+                q.descriptions.emplace_back("Ik woon in\nParijs");
             }
 
             //Fast round
-            add_question("Ork, ork, ork, soep uit je met een ...?");
+            add_text("Ork, ork, ork", "Soep eet je\nmet een ...?");
 
             //Spoiler alert
-            add_question("Wie is de opa van Rey uit Star Wars?");
-            add_question("Wat gebeurt er op het einde van elke 5TV film?");
+            add_text("Spoiler alert", "Wie is de opa\nvan Rey uit\nStar Wars?");
+            add_text("Spoiler alert", "Wat gebeurt er\nop het einde van\nelke 5TV film?");
 
             //Doe-ronde
-            add_question("Maak het vormpje in lego na");
+            add_text("Just do-it", "Maak het vormpje\nin LEGO na");
 
             MSS_END();
         }
@@ -209,8 +238,6 @@ namespace quiz {
                 return true;
 
             MSS(!!events_, error = "Model.events_ not set");
-
-            std::cout << "Changing state from " << state_ << " to " << new_state << std::endl;
 
             //Exit operations
             switch (state_)
@@ -245,16 +272,18 @@ namespace quiz {
 
                         auto question = get_question_(question_ix_);
                         MSS(!!question, error = std::string("there is no question ")+std::to_string(question_ix_));
-                        events_->me_show_question(question);
+                        current_question_ = *question;
+                        std::cout << std::endl << "Showing question " << question_ix_ << std::endl;
+                        events_->me_show_question(&current_question_.value());
 
                         return change_state_(State::Thinking, error);
                     }
                     break;
                 case State::Thinking:
-                    events_->me_play_music(true);
+                    events_->me_play_music(true, false);
                     break;
                 case State::Answer:
-                    events_->me_play_music(false);
+                    events_->me_play_music(false, false);
                     break;
                 case State::Error:
                     break;
@@ -266,6 +295,7 @@ namespace quiz {
         std::string ctor_error_;
         std::string sm_error_;
         std::vector<Question> questions_;
+        std::optional<Question> current_question_;
 
         int question_ix_ = -1;
 
