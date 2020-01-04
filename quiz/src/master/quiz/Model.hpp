@@ -193,18 +193,25 @@ namespace quiz {
                 questions_.push_back(q);
                 return questions_.back();
             };
-            add_text("Leefwereld van je kinderen", "How many bitches\ncan you fit in a Tesla?");
+
+            //Taal
             add_image("Vertaal vanuit het Azarts", "azart_spaghetti.png");
             add_image("Leg dit begrip uit", "azart_hypotenusa.png");
-            add_text("Doe de vergelijking kloppen", "1000 = \n8 8 8 8 8 8 8 8\nGebruik enkel:\n+ - x : ( ) of niets");
             add_text("Roepen maar", "Vl dz vrg n mt\nd jst mdklnkrs:\ndrk f n rp ht wrd\n\"spghtt\"");
             add_music("Welke sport horen we hier?", "morse_high_speed_telegraphy.ogg");
             add_text("", "Hoeveel symbolen\nworden erin\nMorse code gebruikt?");
             add_music("Welk woord horen we hier?", "morse_winawinterweekend.ogg");
-            add_image("Teken hetvolgende symbool", "complete_12345.png");
-            add_text("Geef hetvolgende cijfer", "3.141592");
 
+            //Leefwereld kids
+            add_text("Leefwereld van je kinderen", "How many bitches\ncan you fit in a Tesla?");
+
+            //Raadsels
+            add_image("Op welke plaats staat de auto?", "parkeerplaats.jpg");
+            add_text("Doe de vergelijking kloppen", "1000 = \n8 8 8 8 8 8 8 8\nGebruik enkel:\n+ - x : ( ) of niets");
+            add_image("Teken hetvolgende symbool", "complete_12345.png");
+            
             //Wie ben ik
+            add_text("Geef hetvolgende cijfer", "3.141592");
             {
                 auto &q = add_text("Wie ben ik?");
                 q.descriptions.emplace_back("Ik ben geboren in\nde middeleeuwen");
@@ -215,8 +222,9 @@ namespace quiz {
                 q.descriptions.emplace_back("Vorige lente had\nik last van een brandje");
                 q.descriptions.emplace_back("Ik woon in\nParijs");
             }
+            add_image("Geef 5 albums", "11_albums.jpg");
 
-            //Fast round
+            //Snelle vragen
             add_text("Ork, ork, ork", "Soep eet je\nmet een ...?");
 
             //Spoiler alert
@@ -225,8 +233,6 @@ namespace quiz {
 
             //Doe-ronde
             add_text("Just do-it", "Maak het vormpje\nin LEGO na");
-
-            add_image("Geef 5 albums", "11_albums.jpg");
 
             //Face swap
             add_image("Face-swap", "faceswap_00.png");
@@ -248,9 +254,14 @@ namespace quiz {
             add_image("Geef de naam van de film", "poes_05.png");
             add_image("Geef de naam van de film", "poes_06.png");
 
-            add_image("Op welke plaats staat de auto?", "parkeerplaats.jpg");
-
+            //Droedels
             add_image("Droedel", "droedel_ding.png");
+            add_image("Droedel", "droedel_omleiding.jpg");
+            add_image("Droedel", "droedel_benzine.jpg");
+            add_image("Droedel", "droedel_inktvis.jpg");
+            add_image("Droedel", "droedel_pindakaas.jpg");
+            add_image("Droedel", "droedel_opeenhoping.jpg");
+            add_image("Droedel", "droedel_tweeling.jpg");
             add_image("Droedel", "droedel_kleineren.png");
 
             MSS_END();
