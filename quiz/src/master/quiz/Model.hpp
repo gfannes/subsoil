@@ -226,6 +226,33 @@ namespace quiz {
             //Doe-ronde
             add_text("Just do-it", "Maak het vormpje\nin LEGO na");
 
+            add_image("Geef 5 albums", "11_albums.jpg");
+
+            //Face swap
+            add_image("Face-swap", "faceswap_00.png");
+            add_image("Face-swap", "faceswap_01.png");
+            add_image("Face-swap", "faceswap_02.png");
+            add_image("Face-swap", "faceswap_03.png");
+            add_image("Face-swap", "faceswap_04.png");
+            add_image("Face-swap", "faceswap_05.png");
+            add_image("Face-swap", "faceswap_06.png");
+            add_image("Face-swap", "faceswap_07.png");
+            add_image("Face-swap", "faceswap_08.png");
+
+            //Poes film
+            add_image("Geef de naam van de film", "poes_00.png");
+            add_image("Geef de naam van de film", "poes_01.png");
+            add_image("Geef de naam van de film", "poes_02.png");
+            add_image("Geef de naam van de film", "poes_03.png");
+            add_image("Geef de naam van de film", "poes_04.png");
+            add_image("Geef de naam van de film", "poes_05.png");
+            add_image("Geef de naam van de film", "poes_06.png");
+
+            add_image("Op welke plaats staat de auto?", "parkeerplaats.jpg");
+
+            add_image("Droedel", "droedel_ding.png");
+            add_image("Droedel", "droedel_kleineren.png");
+
             MSS_END();
         }
 

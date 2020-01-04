@@ -261,7 +261,8 @@ namespace quiz {
         bool load_font_(std::string &error)
         {
             MSS_BEGIN(bool);
-            const auto fn = "quiz/media/font/GenR102.TTF";
+            /* const auto fn = "quiz/media/font/GenR102.TTF"; */
+            const auto fn = "quiz/media/font/GenBasR.ttf";
             MSS(font_mgr_.load_font(fn, "myfont"), error = std::string("Could not load font from ")+fn);
             MSS_END();
         }
@@ -290,8 +291,9 @@ namespace quiz {
 
             {
                 auto rr = pop_top(r, 0.1*height);
-                set_bb(title_, rr);
                 set_bb(score_, rr);
+                rr.top -= 0.2*rr.height;
+                set_bb(title_, rr);
             }
             {
                 auto rr = pop_top(r, 0.8*height);
