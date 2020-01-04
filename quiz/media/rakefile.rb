@@ -13,7 +13,7 @@ task :encode_ok_ko do
         %w[ok ko].each do |name|
             ifn = "#{name}%02d.wav"%i
             ofn = "#{name}%02d.ogg"%i
-            sh("ffmpeg -i #{ifn} -c:a libvorbis -q:a 0 #{ofn}")
+            sh("ffmpeg -i #{ifn} -vn -c:a libvorbis -q:a 0 #{ofn}")
         end
     end
 end

@@ -194,6 +194,9 @@ namespace quiz {
                 return questions_.back();
             };
 
+            //Covers
+            add_music("Welke cover is dit?", "cover_jaime_la_vie.ogg");
+
             //Taal
             add_image("Vertaal vanuit het Azarts", "azart_spaghetti.png");
             add_image("Leg dit begrip uit", "azart_hypotenusa.png");
