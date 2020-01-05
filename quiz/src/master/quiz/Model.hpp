@@ -228,7 +228,9 @@ namespace quiz {
             add_image("Geef 5 albums", "11_albums.jpg");
 
             //Snelle vragen
-            add_text("Ork, ork, ork", "Soep eet je\nmet een ...?");
+            add_text("Vul aan", "Ork, ork, ork!\nSoep eet je\nmet een ...!");
+            add_text("Vul aan", "Elk, elk, elk!\nEen koe drinkt ...!");
+            add_text("Vul aan", "Tepel, tepel, tepel!\nSoep eet je\nmet een ...!");
 
             //Spoiler alert
             add_text("Spoiler alert", "Wie is de opa\nvan Rey uit\nStar Wars?");
