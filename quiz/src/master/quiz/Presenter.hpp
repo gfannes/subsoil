@@ -70,7 +70,7 @@ namespace quiz {
             else
                 view_.set_description(question.descriptions[0]);
             view_.set_image(question.image_fn);
-            view_.load_music(question.music_fn, question.pitch);
+            view_.load_music(question.music_fn, question.offset, question.pitch);
         }
         void me_show_answer_team_order(const std::string &team, const std::string &order) override
         {

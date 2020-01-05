@@ -184,11 +184,12 @@ namespace quiz {
                 questions_.push_back(q);
                 return questions_.back();
             };
-            auto add_music = [&](const std::string &title, const std::string &music_fn, float pitch = 1.0f) -> Question&
+            auto add_music = [&](const std::string &title, const std::string &music_fn, float offset = 0.0f, float pitch = 1.0f) -> Question&
             {
                 Question q;
                 q.title = title;
                 q.music_fn = folder+music_fn;
+                q.offset = offset;
                 q.pitch = pitch;
                 questions_.push_back(q);
                 return questions_.back();
@@ -198,26 +199,26 @@ namespace quiz {
             add_music("Geef originele artist", "cover-anna_ternheim-when_tomorrow_comes-eurythmics.ogg");
             add_music("Geef originele artist", "cover-arno-les_files_du_bord_de_mer-adamo.ogg");
             add_music("Geef originele artist", "cover-arno_triggerfinger-j_aime_la_vie-sandra_kim.ogg");
-            add_music("Geef originele artist", "cover-battledragon-freestyler-bomfunkmcs.ogg");
+            add_music("Geef originele artist", "cover-battledragon-freestyler-bomfunkmcs.ogg", 12.5);
             add_music("Geef originele artist", "cover-bazart-sterrenstof-jeugdvantegenwoordig.ogg");
             add_music("Geef originele artist", "cover-children_of_bodom-oops_i_did_it_again-britney_spears.ogg");
             add_music("Geef originele artist", "cover-christoff-sweet_caroline-neil_diamond.ogg");
-            add_music("Geef originele artist", "cover-disturbed-the_sound_of_silence-simon_and_garfunkel.ogg");
-            add_music("Geef originele artist", "cover-ghost-it_s_a_sin-pet_shop_boys.ogg");
-            add_music("Geef originele artist", "cover-hallelujah-pentatonix-leonard_cohen.ogg");
-            add_music("Geef originele artist", "cover-lady_gaga-varia-david_bowie.ogg");
-            add_music("Geef originele artist", "cover-leo_moracchioli-dance_monkey-tones_and_i.ogg");
-            add_music("Geef originele artist", "cover-leo-moracchioli-ring_of_fire-johnny_cash.ogg");
-            add_music("Geef originele artist", "cover-metal-last_christmas-wham.ogg");
+            add_music("Geef originele artist", "cover-disturbed-the_sound_of_silence-simon_and_garfunkel.ogg", 12);
+            add_music("Geef originele artist", "cover-ghost-it_s_a_sin-pet_shop_boys.ogg", 10);
+            add_music("Geef originele artist", "cover-hallelujah-pentatonix-leonard_cohen.ogg", 5.5);
+            add_music("Geef originele artist", "cover-lady_gaga-varia-david_bowie.ogg", 29.2);
+            add_music("Geef originele artist", "cover-leo_moracchioli-dance_monkey-tones_and_i.ogg", 60+52);
+            add_music("Geef originele artist", "cover-leo-moracchioli-ring_of_fire-johnny_cash.ogg", 6.7);
+            add_music("Geef originele artist", "cover-metal-last_christmas-wham.ogg", 58.2);
             add_music("Geef originele artist", "cover-noordkaap-arme_joe-will_tura.ogg");
-            add_music("Geef originele artist", "cover-sarah_bettens_jan_de_wilde-de_aarde-urbanus.ogg");
+            add_music("Geef originele artist", "cover-sarah_bettens_jan_de_wilde-de_aarde-urbanus.ogg", 2*60+16);
             add_music("Geef originele artist", "cover-sinead_o_connor-nothing_compares_2u-prince.ogg");
 
             //Kids world
             add_music("Geef artist + titel", "kidsworld-banaan.ogg");
             add_music("Geef artist + titel", "kidsworld-bbnos-lalala.ogg");
             add_music("Geef artist + titel", "kidsworld-billie_eilish-bad_guy.ogg");
-            add_music("Geef artist + titel", "kidsworld-dimitri_vegas-the_hum.ogg");
+            add_music("Geef artist + titel", "kidsworld-dimitri_vegas-the_hum.ogg", 2*60+7);
             add_music("Geef artist + titel", "kidsworld-dorus_cor_steyn-2_motten.ogg");
             add_music("Geef artist + titel", "kidsworld-jebroer-kind_van_de_duivel.ogg");
             add_music("Geef artist + titel", "kidsworld-joost-summer_vibes.ogg");
@@ -226,30 +227,30 @@ namespace quiz {
             add_music("Geef artist + titel", "kidsworld-lmfao-sexy_and_i_know_it.ogg");
 
             //Film en muziek
-            add_music("Geef film of serie", "movie-callbays.ogg");
-            add_music("Geef film of serie", "movie-die_hard.ogg");
+            add_music("Geef film of serie", "movie-callbays.ogg", 10.4);
+            add_music("Geef film of serie", "movie-die_hard.ogg", 6.5);
             add_music("Geef film of serie", "movie-friends.ogg");
-            add_music("Geef film of serie", "movie-game_of_thrones.ogg");
-            add_music("Geef film of serie", "movie-godzilla-puff_daddy-come_with_me.ogg");
-            add_music("Geef film of serie", "movie-hans_teeuwen.ogg");
-            add_music("Geef film of serie", "movie-howimetyourmother.ogg");
+            /* add_music("Geef film of serie", "movie-game_of_thrones.ogg"); */
+            add_music("Geef film of serie", "movie-godzilla-puff_daddy-come_with_me.ogg", 34.5);
+            add_music("Geef film of serie", "movie-hans_teeuwen.ogg", 60+34.5);
+            add_music("Geef film of serie", "movie-howimetyourmother.ogg", 7.35);
             add_music("Geef film of serie", "movie-journaal_vrt.ogg");
             add_music("Geef film of serie", "movie-jungle_book.ogg");
-            add_music("Geef film of serie", "movie-jurassic_park.ogg");
+            add_music("Geef film of serie", "movie-jurassic_park.ogg", 60+33);
             add_music("Geef film of serie", "movie-la_casa_de_papel.ogg");
             add_music("Geef film of serie", "movie-mission_impossible.ogg");
             add_music("Geef film of serie", "movie-pippi_langkous.ogg");
-            add_music("Geef film of serie", "movie-star_wars.ogg");
-            add_music("Geef film of serie", "movie-the_lord_of_the_rings.ogg");
+            add_music("Geef film of serie", "movie-star_wars.ogg", 60+35.5);
+            add_music("Geef film of serie", "movie-the_lord_of_the_rings.ogg", 60+43.8);
 
             //Originele muziek
             add_music("Geef artist + titel", "orig-channel_zero-black_fuel.ogg");
             add_music("Geef artist + titel", "orig-de_kreuners-nu_of_nooit.ogg");
             add_music("Geef artist + titel", "orig-dolly_parton-i_will_alway_love_you.ogg");
             add_music("Geef artist + titel", "orig-eagles-hotel_california.ogg");
-            add_music("Geef artist + titel", "orig-jan_de_wilde-eerste_sneeuw.ogg");
+            add_music("Geef artist + titel", "orig-jan_de_wilde-eerste_sneeuw.ogg", 23.5);
             add_music("Geef artist + titel", "orig-rik_verheye_jonas-trollenknots.ogg");
-            add_music("Geef artist + titel", "orig-scorpions-wind_of_change.ogg");
+            add_music("Geef artist + titel", "orig-scorpions-wind_of_change.ogg", 19.65);
             add_music("Geef artist + titel", "orig-stomae-alors_on_dance.ogg");
             add_music("Geef artist + titel", "orig-the_steve_miller_band-the_joker.ogg");
             add_music("Geef artist + titel", "orig-urbanus-madammen_met_een_bontjas.ogg");
@@ -262,9 +263,6 @@ namespace quiz {
             add_music("Welke sport horen we hier?", "morse_high_speed_telegraphy.ogg");
             add_text("", "Hoeveel symbolen\nworden erin\nMorse code gebruikt?");
             add_music("Welk woord horen we hier?", "morse_winawinterweekend.ogg");
-
-            //Leefwereld kids
-            add_text("Leefwereld van je kinderen", "How many bitches\ncan you fit in a Tesla?");
 
             //Raadsels
             add_image("Op welke plaats staat de auto?", "parkeerplaats.jpg");
@@ -344,22 +342,21 @@ namespace quiz {
 
             //Spoiler alert
             add_text("Spoiler alert", "Wie is de opa\nvan Rey uit\nStar Wars?");
-            add_text("Spoiler alert", "Wat gebeurt er\nop het einde van\nelke 5TV film?");
 
             //Doe-ronde
             add_text("Just do-it", "Maak het vormpje\nin LEGO na");
-            add_text("Just do-it", "Tel tot 10 in\nNederlands\nFrans\nEngels");
+            add_text("Just do-it", "Tel tot 10 in het\nNederlands\nFrans\nEngels");
 
             //Face swap
-            add_image("Face-swap", "faceswap_00.png");
-            add_image("Face-swap", "faceswap_01.png");
-            add_image("Face-swap", "faceswap_02.png");
-            add_image("Face-swap", "faceswap_03.png");
-            add_image("Face-swap", "faceswap_04.png");
-            add_image("Face-swap", "faceswap_05.png");
-            add_image("Face-swap", "faceswap_06.png");
-            add_image("Face-swap", "faceswap_07.png");
-            add_image("Face-swap", "faceswap_08.png");
+            add_image("Face-swap: wie zijn dit?", "faceswap_00.png");
+            add_image("Face-swap: wie zijn dit?", "faceswap_01.png");
+            add_image("Face-swap: wie zijn dit?", "faceswap_02.png");
+            add_image("Face-swap: wie zijn dit?", "faceswap_03.png");
+            add_image("Face-swap: wie zijn dit?", "faceswap_04.png");
+            add_image("Face-swap: wie zijn dit?", "faceswap_05.png");
+            add_image("Face-swap: wie zijn dit?", "faceswap_06.png");
+            add_image("Face-swap: wie zijn dit?", "faceswap_07.png");
+            add_image("Face-swap: wie zijn dit?", "faceswap_08.png");
 
             //Poes film
             add_image("Geef de naam van de film", "poes_00.png");
@@ -428,6 +425,8 @@ namespace quiz {
                         MSS(!!question, error = std::string("there is no question ")+std::to_string(question_ix_));
                         current_question_ = *question;
                         std::cout << std::endl << "Showing question " << question_ix_ << std::endl;
+                        std::cout << "  " << current_question_->image_fn << std::endl;
+                        std::cout << "  " << current_question_->music_fn << std::endl;
                         events_->me_show_question(&current_question_.value());
 
                         return change_state_(State::Thinking, error);

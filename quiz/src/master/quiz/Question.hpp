@@ -14,6 +14,7 @@ namespace quiz {
         std::vector<std::string> descriptions;
         std::string image_fn;
         std::string music_fn;
+        float offset = 0.0f;
         float pitch = 1.0f;
 
     private:

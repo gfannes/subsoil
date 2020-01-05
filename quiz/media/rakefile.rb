@@ -23,7 +23,7 @@ task :encode_mp4 do
     Dir.chdir("raw") do
         FileList.new("*.mp4").each do |ifn|
             ofn = ifn.gsub(".mp4", ".ogg")
-            sh("ffmpeg -i #{ifn} -vn -c:a libvorbis -q:a 0 #{ofn}")
+            sh("ffmpeg -i #{ifn} -vn -c:a libvorbis -q:a 8 #{ofn}")
         end
     end
 end

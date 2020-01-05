@@ -83,7 +83,7 @@ namespace quiz {
                 MSS(image_.load_from_file(fn));
             MSS_END();
         }
-        bool load_music(const std::string &fn, float pitch = 1.0f)
+        bool load_music(const std::string &fn, float offset = 0.0f, float pitch = 1.0f)
         {
             MSS_BEGIN(bool);
             if (fn.empty())
@@ -98,6 +98,7 @@ namespace quiz {
             {
                 music_.emplace();
                 MSS(music_->openFromFile(fn), music_.reset());
+                music_->setPlayingOffset(sf::seconds(offset));
                 music_->setPitch(pitch);
             }
             MSS_END();
