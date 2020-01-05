@@ -195,7 +195,65 @@ namespace quiz {
             };
 
             //Covers
-            add_music("Welke cover is dit?", "cover_jaime_la_vie.ogg");
+            add_music("Geef originele artist", "cover-anna_ternheim-when_tomorrow_comes-eurythmics.ogg");
+            add_music("Geef originele artist", "cover-arno-les_files_du_bord_de_mer-adamo.ogg");
+            add_music("Geef originele artist", "cover-arno_triggerfinger-j_aime_la_vie-sandra_kim.ogg");
+            add_music("Geef originele artist", "cover-battledragon-freestyler-bomfunkmcs.ogg");
+            add_music("Geef originele artist", "cover-bazart-sterrenstof-jeugdvantegenwoordig.ogg");
+            add_music("Geef originele artist", "cover-children_of_bodom-oops_i_did_it_again-britney_spears.ogg");
+            add_music("Geef originele artist", "cover-christoff-sweet_caroline-neil_diamond.ogg");
+            add_music("Geef originele artist", "cover-disturbed-the_sound_of_silence-simon_and_garfunkel.ogg");
+            add_music("Geef originele artist", "cover-ghost-it_s_a_sin-pet_shop_boys.ogg");
+            add_music("Geef originele artist", "cover-hallelujah-pentatonix-leonard_cohen.ogg");
+            add_music("Geef originele artist", "cover-lady_gaga-varia-david_bowie.ogg");
+            add_music("Geef originele artist", "cover-leo_moracchioli-dance_monkey-tones_and_i.ogg");
+            add_music("Geef originele artist", "cover-leo-moracchioli-ring_of_fire-johnny_cash.ogg");
+            add_music("Geef originele artist", "cover-metal-last_christmas-wham.ogg");
+            add_music("Geef originele artist", "cover-noordkaap-arme_joe-will_tura.ogg");
+            add_music("Geef originele artist", "cover-sarah_bettens_jan_de_wilde-de_aarde-urbanus.ogg");
+            add_music("Geef originele artist", "cover-sinead_o_connor-nothing_compares_2u-prince.ogg");
+
+            //Kids world
+            add_music("Geef artist + titel", "kidsworld-banaan.ogg");
+            add_music("Geef artist + titel", "kidsworld-bbnos-lalala.ogg");
+            add_music("Geef artist + titel", "kidsworld-billie_eilish-bad_guy.ogg");
+            add_music("Geef artist + titel", "kidsworld-dimitri_vegas-the_hum.ogg");
+            add_music("Geef artist + titel", "kidsworld-dorus_cor_steyn-2_motten.ogg");
+            add_music("Geef artist + titel", "kidsworld-jebroer-kind_van_de_duivel.ogg");
+            add_music("Geef artist + titel", "kidsworld-joost-summer_vibes.ogg");
+            add_music("Geef artist + titel", "kidsworld-kraantje_pappie-pompen.ogg");
+            add_music("Geef artist + titel", "kidsworld-lil_kleine-drang_drugs.ogg");
+            add_music("Geef artist + titel", "kidsworld-lmfao-sexy_and_i_know_it.ogg");
+
+            //Film en muziek
+            add_music("Geef film of serie", "movie-callbays.ogg");
+            add_music("Geef film of serie", "movie-die_hard.ogg");
+            add_music("Geef film of serie", "movie-friends.ogg");
+            add_music("Geef film of serie", "movie-game_of_thrones.ogg");
+            add_music("Geef film of serie", "movie-godzilla-puff_daddy-come_with_me.ogg");
+            add_music("Geef film of serie", "movie-hans_teeuwen.ogg");
+            add_music("Geef film of serie", "movie-howimetyourmother.ogg");
+            add_music("Geef film of serie", "movie-journaal_vrt.ogg");
+            add_music("Geef film of serie", "movie-jungle_book.ogg");
+            add_music("Geef film of serie", "movie-jurassic_park.ogg");
+            add_music("Geef film of serie", "movie-la_casa_de_papel.ogg");
+            add_music("Geef film of serie", "movie-mission_impossible.ogg");
+            add_music("Geef film of serie", "movie-pippi_langkous.ogg");
+            add_music("Geef film of serie", "movie-star_wars.ogg");
+            add_music("Geef film of serie", "movie-the_lord_of_the_rings.ogg");
+
+            //Originele muziek
+            add_music("Geef artist + titel", "orig-channel_zero-black_fuel.ogg");
+            add_music("Geef artist + titel", "orig-de_kreuners-nu_of_nooit.ogg");
+            add_music("Geef artist + titel", "orig-dolly_parton-i_will_alway_love_you.ogg");
+            add_music("Geef artist + titel", "orig-eagles-hotel_california.ogg");
+            add_music("Geef artist + titel", "orig-jan_de_wilde-eerste_sneeuw.ogg");
+            add_music("Geef artist + titel", "orig-rik_verheye_jonas-trollenknots.ogg");
+            add_music("Geef artist + titel", "orig-scorpions-wind_of_change.ogg");
+            add_music("Geef artist + titel", "orig-stomae-alors_on_dance.ogg");
+            add_music("Geef artist + titel", "orig-the_steve_miller_band-the_joker.ogg");
+            add_music("Geef artist + titel", "orig-urbanus-madammen_met_een_bontjas.ogg");
+            add_music("Geef artist + titel", "orig-volbeat-still_counting.ogg");
 
             //Taal
             add_image("Vertaal vanuit het Azarts", "azart_spaghetti.png");
@@ -225,6 +283,58 @@ namespace quiz {
                 q.descriptions.emplace_back("Vorige lente had\nik last van een brandje");
                 q.descriptions.emplace_back("Ik woon in\nParijs");
             }
+            {
+                auto &q = add_text("Wie ben ik?");
+                q.descriptions.emplace_back("Ik woon in\nLommel");
+                q.descriptions.emplace_back("Ik had om 18u\nop 2019/07/28\nmoeten starten");
+                q.descriptions.emplace_back("De burgemeester\nheeft mij genekt");
+                q.descriptions.emplace_back("Ik was niet\nveilig genoeg");
+                q.descriptions.emplace_back("Ik ben Fyre\nin \'t klein");
+                q.descriptions.emplace_back("Ik ben een\nfestival");
+                q.descriptions.emplace_back("Mijn naam\nklinkt zelfs\nals festival");
+            }
+            {
+                auto &q = add_text("Wie ben ik?");
+                q.descriptions.emplace_back("Ik spreek Antwerps");
+                q.descriptions.emplace_back("Ik hou van klinkers");
+                q.descriptions.emplace_back("Ik was ook graag\npiloot geweest");
+                q.descriptions.emplace_back("Ik was ook graag\nvliegtuig geweest");
+                q.descriptions.emplace_back("Nu ben ik niet meer");
+                q.descriptions.emplace_back("Mijn werk kan je\nnog wel komen\nbekijken");
+                q.descriptions.emplace_back("Mijn echte naam is\nHenri Van Herwegen");
+            }
+            {
+                auto &q = add_text("Wat ben ik?");
+                q.descriptions.emplace_back("A: We willen\neen eenhoorn");
+                q.descriptions.emplace_back("B: Eenhoorns bestaan\nniet. Je kan\neen pony krijgen");
+                q.descriptions.emplace_back("A: We stemmen\ntegen een pony");
+                q.descriptions.emplace_back("B: Dan krijg\nje niets");
+                q.descriptions.emplace_back("A: We stemmen\ntegen \"niets\"");
+                q.descriptions.emplace_back("B: Wat wil je\ndan wel?");
+                q.descriptions.emplace_back("A: We willen\neen eenhoorn");
+            }
+            {
+                auto &q = add_text("Wat ben ik?");
+                q.descriptions.emplace_back("Ik lach met iedereen");
+                q.descriptions.emplace_back("Niet iedereen\nkan daar mee\nlachen");
+                q.descriptions.emplace_back("Zeker niet\nna dit jaar");
+                q.descriptions.emplace_back("Ze willen\nme schrappen");
+                q.descriptions.emplace_back("We schrappen\nliever ons zelf");
+                q.descriptions.emplace_back("Dat zou dan\nwel de eerste\nkeer zijn");
+                q.descriptions.emplace_back("\'t Zijn allemaal\nvuil janetten");
+                q.descriptions.emplace_back("Ik vind plaats\nin Aalst");
+            }
+            {
+                auto &q = add_text("Wie ben ik?");
+                q.descriptions.emplace_back("Ik zeg tegen\niedereen mijn\ngedacht");
+                q.descriptions.emplace_back("Niet iedereen\nkan daar mee\nlachen");
+                q.descriptions.emplace_back("Ze hebben mijn\njeugd verpest");
+                q.descriptions.emplace_back("Soms pak ik\nde boot");
+                q.descriptions.emplace_back("Liever geen\nvliegtuig");
+                q.descriptions.emplace_back("Ik ben al\neven niet meer\nnaar school geweest");
+                q.descriptions.emplace_back("How dare you!");
+                q.descriptions.emplace_back("Ik was Time\nPerson of the Year");
+            }
             add_image("Geef 5 albums", "11_albums.jpg");
 
             //Snelle vragen
@@ -238,6 +348,7 @@ namespace quiz {
 
             //Doe-ronde
             add_text("Just do-it", "Maak het vormpje\nin LEGO na");
+            add_text("Just do-it", "Tel tot 10 in\nNederlands\nFrans\nEngels");
 
             //Face swap
             add_image("Face-swap", "faceswap_00.png");
