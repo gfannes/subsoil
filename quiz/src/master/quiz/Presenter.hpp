@@ -27,10 +27,19 @@ namespace quiz {
 
             MSS(!quit());
 
-            if (reset_background_timepoint_ && reset_background_timepoint_.value() <= Clock::now())
+            if (reset_background_timepoint_)
             {
-                view_.set_background_color(sf::Color::Black);
-                reset_background_timepoint_.reset();
+                view_.set_score(score_);
+                if (reset_background_timepoint_.value() <= Clock::now())
+                {
+                    view_.set_background_color(sf::Color::Black);
+                    reset_background_timepoint_.reset();
+                }
+            }
+            else
+            {
+                view_.set_score("");
+                view_.set_board(board_names_, board_stati_);
             }
 
             MSS(model_(error));
@@ -104,13 +113,40 @@ namespace quiz {
                 for (const auto &p: score->team__score)
                     oss << " team " << p.first << ": " << p.second << std::endl;
             }
-            view_.set_score(oss.str());
+            score_ = oss.str();
+        }
+        void me_show_board(const Board *board) override
+        {
+            board_names_.clear();
+            board_stati_.resize(0);
+
+            if (!!board)
+            {
+                unsigned int cix = 0;
+                for (const auto &p: board->group__categories)
+                {
+                    const auto &category = p.second;
+                    board_names_ += std::to_string(cix)+"  "+category.name+"\n";
+                    for (auto i = 0; i < category.status.size(); ++i)
+                    {
+                        if (i >= board_stati_.size())
+                            board_stati_.resize(i+1);
+                        board_stati_[i] += std::string(1, category.status[i])+"\n";
+                    }
+
+                    ++cix;
+                }
+            }
         }
 
     private:
         bool quit_ = false;
         Model &model_;
         View &view_;
+
+        std::string score_;
+        std::string board_names_;
+        std::vector<std::string> board_stati_;
 
         using Clock = std::chrono::system_clock;
         std::optional<Clock::time_point> reset_background_timepoint_;

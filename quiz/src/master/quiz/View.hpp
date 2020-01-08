@@ -74,7 +74,31 @@ namespace quiz {
                 str = std::string("Next: ")+order;
             answer_order_.set_string(str);
         }
-        void set_score(const std::string &score) { score_.set_string(score); }
+        void set_score(const std::string &score)
+        {
+            score_.set_string(score);
+        }
+        void set_board(const std::string &names, const std::vector<std::string> &stati)
+        {
+            {
+                std::string str;
+                if (!names.empty())
+                    str = std::string("\n")+names;
+                board_name_.set_string(str);
+            }
+            for (auto i = 0; i < board_stati_.size(); ++i)
+            {
+                auto &board_status = board_stati_[i];
+                std::string str;
+                if (i < stati.size())
+                {
+                    const auto &status = stati[i];
+                    if (!status.empty())
+                        str = std::to_string(i)+"\n"+status;
+                }
+                board_status.set_string(str);
+            }
+        }
         bool set_image(const std::string &fn)
         {
             MSS_BEGIN(bool);
@@ -206,6 +230,9 @@ namespace quiz {
             score_.draw(window_);
             answer_team_.draw(window_);
             answer_order_.draw(window_);
+            board_name_.draw(window_);
+            for (auto &status: board_stati_)
+                status.draw(window_);
             window_.display();
             MSS_END();
         }
@@ -276,6 +303,10 @@ namespace quiz {
             score_.set_font(font);
             answer_team_.set_font(font);
             answer_order_.set_font(font);
+            board_name_.set_font(font);
+            board_stati_.resize(10);
+            for (auto &status: board_stati_)
+                status.set_font(font);
             MSS_END();
         }
         bool layout_elements_(std::string &error)
@@ -293,6 +324,14 @@ namespace quiz {
             {
                 auto rr = pop_top(r, 0.1*height);
                 set_bb(score_, rr);
+                {
+                    auto copy_rr = rr;
+                    auto rrr = pop_top(copy_rr, 1.0/10.5*height);
+                    set_bb(board_name_, pop_left(rrr, 0.2*width));
+                    pop_left(rrr, 0.2*width);
+                    for (auto &status: board_stati_)
+                        set_bb(status, pop_left(rrr, 0.05*width));
+                }
                 rr.top -= 0.2*rr.height;
                 set_bb(title_, rr);
             }
@@ -329,6 +368,8 @@ namespace quiz {
         gubg::sfml::Label score_;
         gubg::sfml::Label answer_team_;
         gubg::sfml::Label answer_order_;
+        gubg::sfml::Label board_name_;
+        std::vector<gubg::sfml::Label> board_stati_;
 
         struct Image
         {
