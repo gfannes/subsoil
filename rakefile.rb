@@ -176,3 +176,22 @@ namespace :quiz do
         # cooker().generate(:ninja, "quiz/master").ninja().run("-t", "/dev/ttyACM0", "-b", 9600)
     end
 end
+
+namespace :vst do
+    require("gubg/shared")
+    namespace :pigy do
+        makefile_dir = "vst/pigy/Builds/LinuxMakefile"
+        desc "pigy build"
+        task :build do
+            Dir.chdir(makefile_dir) do
+                puts Dir.pwd
+                sh("make -j 8")
+                FileUtils.install("build/pigy.so", GUBG.home_dir(".vst"), verbose: true)
+            end
+        end
+        desc "clear"
+        task :clear do
+            FileUtils.rm_rf(File.join(makefile_dir, "build"))
+        end
+    end
+end
