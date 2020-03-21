@@ -2,11 +2,9 @@ $fs = 0.01;
 $fn = 100;
 
 thick = 2;
-diam = 35;
+diam =28;
 board_thick = 5;
 hole_diam = 2;
-//TODO: check if this is correct: distance between mounting screws
-offset = 12;
 
 module pole()
 {
@@ -37,10 +35,15 @@ difference()
         }
     }
 
-    for (angle = [0,90,180,270])
+    for (sign = [-1,1])
     {
-        rotate(angle, [0,0,1])
-        translate([offset/2,offset/2,-thick/2])
-        cylinder(thick+$fs, hole_diam/2,hole_diam/2, true);
+        rotate(45, [0,0,1])
+        {
+            translate([0,sign*19/2,-thick/2])
+            cylinder(thick+$fs, hole_diam/2,hole_diam/2, true);
+
+            translate([sign*16/2,0,-thick/2])
+            cylinder(thick+$fs, hole_diam/2,hole_diam/2, true);
+        }
     }
 }
