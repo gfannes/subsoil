@@ -2,9 +2,12 @@ $fs = 0.01;
 $fn = 100;
 
 thick = 2;
-diam =28;
+diam = 35;
 board_thick = 5;
-hole_diam = 2;
+hole_diam = 3.2;
+knob_diam = 6;
+
+height = diam/2.5;
 
 module pole()
 {
@@ -16,8 +19,7 @@ module pole()
         rotate(90,[1,0,0])
         linear_extrude(thick)
         {
-            a = diam/2.5;
-            polygon([[0,0], [a,0], [0,a]]);
+            polygon([[0,0], [height,0], [0,height]]);
         }
     }
 }
@@ -39,11 +41,21 @@ difference()
     {
         rotate(45, [0,0,1])
         {
-            translate([0,sign*19/2,-thick/2])
-            cylinder(thick+$fs, hole_diam/2,hole_diam/2, true);
+            translate([0,sign*19/2,0])
+            {
+                translate([0,0,-thick/2])
+                cylinder(thick+$fs, hole_diam/2,hole_diam/2, true);
 
-            translate([sign*16/2,0,-thick/2])
-            cylinder(thick+$fs, hole_diam/2,hole_diam/2, true);
+                cylinder(height, knob_diam/2,knob_diam/2);
+            }
+
+            translate([sign*16/2,0,0])
+            {
+                translate([0,0,-thick/2])
+                cylinder(thick+$fs, hole_diam/2,hole_diam/2, true);
+
+                cylinder(height, knob_diam/2,knob_diam/2);
+            }
         }
     }
 }
