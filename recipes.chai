@@ -42,6 +42,7 @@ root.book("poc", fun(b){
     b.recipe("exe", TargetType.Executable, fun(rcp){
         rcp.add("poc", "${getenv("subsoil_poc_filename")}.cpp")
         rcp.depends_on("/arduino/core")
+        rcp.depends_on("/arduino/servo")
         rcp.depends_on("gubg/arduino")
         rcp.depends_on("gubg/std/func")
         rcp.depends_on("gubg/io/hpp")
