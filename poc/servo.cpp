@@ -31,6 +31,10 @@ void loop()
     each_servo(set_angle);
     delay(2000);
 
+    angle = 90;
+    each_servo(set_angle);
+    delay(2000);
+
     angle = 180;
     each_servo(set_angle);
     delay(2000);
