@@ -1,7 +1,7 @@
 $fs = 0.01;
 $fn = 100;
 
-thick = 2;
+thick = 3;
 board_thick = 5;
 a = 15;
 b = 4;
@@ -12,7 +12,7 @@ lower = 12;
 extra = 4;
 block = slot+[extra,extra,extra/2];
 
-screw_diam = 3;
+screw_diam = 2.7;
 
 difference()
 {
@@ -39,18 +39,19 @@ difference()
         translate([0,0,slot.z/2-$fs])
         cube(slot, true);
 
-        translate([0,0,slot.x/2-$fs])
-        cube([slot.x,block.y+$fs,slot.x], true);
+        my_z = slot.x+2;
+        translate([0,0,my_z/2-$fs])
+        cube([slot.x,block.y+$fs,my_z], true);
         for (sign = [-1,1])
         {
-            angle = 32;
+            angle = 26;
             y = 15;
             z = 10;
             d = 10;
             h = 11.5;
             translate([0,sign*y,z])
             rotate(sign*angle,[1,0,0])
-            translate([0,0,h/2])
+            translate([0,0,h/2-1])
             cube([10,d,h], true);
         }
     }
