@@ -5,16 +5,16 @@ thick = 3;
 diam = 45;
 board_thick = 5.1;
 screw_shaft_diam = 3.2;
-screw_head_diam = 5.7;
+screw_head_diam = 6;
 
-height = diam/2.35;
+height = diam/2.7;
 
 module corner()
 {
     for (sign = [-1,1])
     {
         translate([0,sign*(board_thick+thick)/2,0])
-        translate([board_thick/2,0,0])
+        translate([board_thick,0,0])
         translate([0,thick/2,0])
         rotate(90,[1,0,0])
         linear_extrude(thick)
