@@ -1,3 +1,5 @@
+$LOAD_PATH << "#{ENV["gubg"]}/ruby"
+
 task :default do
     sh "rake -T"
 end
@@ -138,7 +140,7 @@ namespace :laurot do
     desc "Laurot slave"
     task :slave, [:id, :arch] do |t,args|
         uri, id, arch = "laurot/slave", args[:id]||0, args[:arch]||"mega"
-        output_dir = "laurot/build/#{arch}_#{id}"
+        output_dir = "laurot/build/slave/#{arch}_#{id}"
         cooker()
             .recipes_fn(gubg_arduino, "recipes.chai")
             .toolchain("gcc", "#{gubg_arduino}/cook/avr.chai")
@@ -152,6 +154,19 @@ namespace :laurot do
     desc "Laurot master"
     task :master do
         cooker().generate(:ninja, "laurot/master").ninja().run("-t", "/dev/ttyUSB0", "-b", 9600, "-s", 1)
+    end
+    desc "Test app"
+    task :test do |t,args|
+        uri, arch = "laurot/test", args[:arch]||"mega"
+        output_dir = "laurot/build/test/#{arch}"
+        cooker()
+            .recipes_fn(gubg_arduino, "recipes.chai")
+            .toolchain("gcc", "#{gubg_arduino}/cook/avr.chai")
+            .option(arch)
+            .output(output_dir)
+            .generate(:ninja, uri)
+            .ninja()
+        Arduino.program("#{output_dir}/#{uri.gsub("/",".")}", arch: arch)
     end
 end
 

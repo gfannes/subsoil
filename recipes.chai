@@ -73,6 +73,18 @@ root.book("laurot", fun(b){
         rcp.add("laurot/src", "laurot/**.[hc]pp");
         rcp.depends_on("gubg/func");
     })
+    b.recipe("test", TargetType.Executable, fun(rcp){
+        rcp.add("laurot/src/test", "**.[hc]pp")
+        /* rcp.add("laurot/src", "laurot/**.[hc]pp"); */
+        /* cook.toolchain.each_config("slave.id", fun[rcp](id){ */
+            /* rcp.define("LAUROT_SLAVE_ID", id) */
+        /* }) */
+        rcp.depends_on("/arduino/core")
+        rcp.depends_on("gubg/arduino")
+        rcp.depends_on("gubg/std/func")
+        rcp.depends_on("gubg/io/hpp")
+        /* rcp.depends_on("gubg/func"); */
+    })
 })
 root.book("quiz", fun(b){
     b.recipe("slave", TargetType.Executable, fun(rcp){
