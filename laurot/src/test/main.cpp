@@ -41,25 +41,24 @@ private:
     gubg::arduino::Pin pin_;
 };
 
-std::array<Relay, 7> relays{};
-std::array<Button, 7> buttons{};
+std::array<Relay, 2*7> relays{};
+std::array<Button, 2*7> buttons{};
 
 gubg::arduino::Elapsed<unsigned int> elapsed_ms;
 
 void setup()
 {
-    for (auto ix = 0u; ix < 7; ++ix)
-    {
-        buttons[ix].set_pin(34+ix);
-        relays[ix].set_pin(46+ix);;
-    }
+    for (auto ix = 0u; ix < buttons.size(); ++ix)
+        buttons[ix].set_pin(26+ix);
+    for (auto ix = 0u; ix < relays.size(); ++ix)
+        relays[ix].set_pin(40+ix);;
 }
 
 void loop()
 {
     elapsed_ms.process(millis());
 
-    for (auto ix = 0u; ix < 7; ++ix)
+    for (auto ix = 0u; ix < std::min(buttons.size(), relays.size()); ++ix)
     {
         auto &button = buttons[ix];
         auto &relay = relays[ix];
