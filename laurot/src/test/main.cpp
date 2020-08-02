@@ -9,6 +9,8 @@
 
 #include "Arduino.h"
 
+using Clock = gubg::arduino::MillisClock;
+
 enum class Type {None, Button, Relay};
 
 struct ButtonEvent
@@ -101,7 +103,7 @@ public:
                         const auto new_pressed = (state_ix == Button::DownIX);
                         if (new_pressed != button_.is_pressed)
                         {
-                            const unsigned int now = gubg::arduino::MillisClock::now();
+                            const auto now = Clock::now();
                             button_.is_pressed = new_pressed;
                             button_.has_event = true;
                             button_.is_long_event = ((now-button_.event_timepoint) >= Button::LongDuration_ms);
@@ -138,7 +140,7 @@ private:
 
         bool has_event = false;
         bool is_long_event = false;
-        unsigned int event_timepoint = 0;
+        Clock::TimePoint event_timepoint = 0;
 
         bool is_pressed = false;
         std::array<std::uint8_t, 2> debounce_counts{};
@@ -159,7 +161,7 @@ private:
 
 std::array<IO, 63> ios{};
 
-gubg::arduino::Elapsed<gubg::arduino::MillisClock::TimePoint> elapsed_ms;
+gubg::arduino::Elapsed<Clock::TimePoint> elapsed_ms;
 
 void setup()
 {
@@ -180,7 +182,7 @@ void setup()
 
 void loop()
 {
-    elapsed_ms.process(gubg::arduino::MillisClock::now());
+    elapsed_ms.process(Clock::now());
 
     for (auto ix = 0u; ix < ios.size(); ++ix)
     {
