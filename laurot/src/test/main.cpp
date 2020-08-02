@@ -1,5 +1,6 @@
 #include <gubg/arduino/Pin.hpp>
 #include <gubg/arduino/Elapsed.hpp>
+#include <gubg/arduino/Clock.hpp>
 #include <gubg/std/array.hpp>
 #include <gubg/std/algorithm.hpp>
 
@@ -9,6 +10,12 @@
 #include "Arduino.h"
 
 enum class Type {None, Button, Relay};
+
+struct ButtonEvent
+{
+    bool pressed = false;
+    bool is_long = false;
+};
 
 class IO
 {
@@ -25,40 +32,48 @@ public:
             return false;
         return button_.is_pressed;
     }
-    bool get_button_event(bool &pressed) const
+    bool get_button_event(ButtonEvent &event) const
     {
         if (!is(Type::Button))
             return false;
         if (!button_.has_event)
             return false;
-        pressed = button_.is_pressed;
+        event.pressed = button_.is_pressed;
+        event.is_long = button_.is_long_event;
         return true;
     }
 
     //Relay API
-    void setup_relay(std::uint8_t pin, unsigned int ms)
+    void setup_relay(std::uint8_t pin, unsigned int short_duration_ms, unsigned int long_duration_ms)
     {
         type_ = Type::Relay;
         pin_.set_pin(pin).set_output(true);
-        relay_.duration_ms = ms;
+        relay_.short_duration_ms = short_duration_ms;
+        relay_.long_duration_ms = long_duration_ms;
     }
     bool relay_is_active() const
     {
         if (!is(Type::Relay))
-            return;
+            return false;
         return relay_.active_ms > 0;
     }
-    void activate_relay()
+    void activate_relay(bool use_short_duration = true)
     {
         if (!is(Type::Relay))
             return;
-        relay_.active_ms = relay_.duration_ms;
+        relay_.active_ms = use_short_duration ? relay_.short_duration_ms : relay_.long_duration_ms;
+        if (exclusive_io_)
+            exclusive_io_->deactivate_relay();
     }
     void deactivate_relay()
     {
         if (!is(Type::Relay))
             return;
         relay_.active_ms = 0;
+    }
+    void set_exclusive(IO *io)
+    {
+        exclusive_io_ = io;
     }
 
     //Common API
@@ -86,8 +101,12 @@ public:
                         const auto new_pressed = (state_ix == Button::DownIX);
                         if (new_pressed != button_.is_pressed)
                         {
+                            const unsigned int now = gubg::arduino::MillisClock::now();
                             button_.is_pressed = new_pressed;
                             button_.has_event = true;
+                            button_.is_long_event = ((now-button_.event_timepoint) >= Button::LongDuration_ms);
+
+                            button_.event_timepoint = now;
                         }
                     }
                 }
@@ -115,8 +134,12 @@ private:
         const static std::uint8_t DebounceCount = 16;
         const static std::uint8_t UpIX = 0u;
         const static std::uint8_t DownIX = 1u;
+        const static unsigned int LongDuration_ms = 500;
 
         bool has_event = false;
+        bool is_long_event = false;
+        unsigned int event_timepoint = 0;
+
         bool is_pressed = false;
         std::array<std::uint8_t, 2> debounce_counts{};
     };
@@ -124,46 +147,64 @@ private:
 
     struct Relay
     {
-        unsigned int duration_ms = 2000;
+        unsigned int short_duration_ms = 2000;
+        unsigned int long_duration_ms = 10000;
         unsigned int active_ms = 0;
     };
     Relay relay_;
+
+    IO *exclusive_io_ = nullptr;
 };
 
 
 std::array<IO, 63> ios{};
 
-gubg::arduino::Elapsed<unsigned int> elapsed_ms;
+gubg::arduino::Elapsed<gubg::arduino::MillisClock::TimePoint> elapsed_ms;
 
 void setup()
 {
     for (auto ix = 0u; ix < 7; ++ix)
         ios[ix].setup_button(A0+ix);
     for (auto ix = 7u; ix < 14; ++ix)
-        ios[ix].setup_relay(A0+ix, 2000);
+    {
+        auto &io = ios[ix];
+        io.setup_relay(A0+ix, 2000, 10000);
+        if (ix > 0 && ix%2 == 0)
+        {
+            auto &other_io = ios[ix-1];
+            io.set_exclusive(&other_io);
+            other_io.set_exclusive(&io);
+        }
+    }
 }
 
 void loop()
 {
-    elapsed_ms.process(millis());
+    elapsed_ms.process(gubg::arduino::MillisClock::now());
 
     for (auto ix = 0u; ix < ios.size(); ++ix)
     {
         auto &io = ios[ix];
 
-        bool pressed;
-        if (io.get_button_event(pressed))
+        ButtonEvent button_event;
+        if (io.get_button_event(button_event))
         {
             const auto relay_ix = ix+7;
             if (relay_ix < ios.size())
             {
                 auto &relay = ios[relay_ix];
-                if (pressed)
+                if (button_event.pressed)
                 {
                     if (relay.relay_is_active())
                         relay.deactivate_relay();
                     else
-                        relay.activate_relay();
+                        relay.activate_relay(true);
+                }
+                else
+                {
+                    /* if (button_event.is_long && relay.relay_is_active()) */
+                    if (button_event.is_long)
+                        relay.activate_relay(false);
                 }
             }
         }
