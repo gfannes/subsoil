@@ -204,8 +204,7 @@ void loop()
                 }
                 else
                 {
-                    /* if (button_event.is_long && relay.relay_is_active()) */
-                    if (button_event.is_long)
+                    if (button_event.is_long && relay.relay_is_active())
                         relay.activate_relay(false);
                 }
             }
