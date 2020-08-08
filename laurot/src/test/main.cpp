@@ -11,17 +11,114 @@
 
 using Clock = gubg::arduino::MillisClock;
 
-enum class Type {None, Button, Relay};
-
-struct ButtonEvent
+class Button
 {
-    bool pressed = false;
-    bool is_long = false;
+public:
+    struct Event
+    {
+        bool pressed = false;
+        bool is_long = false;
+    };
+
+    const static std::uint8_t DebounceCount = 16;
+    const static std::uint8_t UpIX = 0u;
+    const static std::uint8_t DownIX = 1u;
+    const static unsigned int LongDuration_ms = 500;
+
+    bool get_event(Event &event) const
+    {
+        if (!has_event_)
+            return false;
+        event.pressed = is_pressed_;
+        event.is_long = is_long_event_;
+        return true;
+    }
+    bool is_pressed() const
+    {
+        return is_pressed_;
+    }
+
+    void process(std::uint8_t state_ix, unsigned int elapse_ms)
+    {
+        has_event_ = false;
+        if (debounce_counts_[state_ix] < Button::DebounceCount)
+        {
+            //Button is still debouncing
+            ++debounce_counts_[state_ix];
+            debounce_counts_[1u-state_ix] = 0;
+        }
+        else
+        {
+            //Button reached stable state
+            const auto new_pressed = (state_ix == Button::DownIX);
+            if (new_pressed != is_pressed_)
+            {
+                const auto now = Clock::now();
+                is_pressed_ = new_pressed;
+                has_event_ = true;
+                is_long_event_ = ((now-event_timepoint_) >= Button::LongDuration_ms);
+
+                event_timepoint_ = now;
+            }
+        }
+    }
+
+private:
+    bool has_event_ = false;
+    bool is_long_event_ = false;
+    Clock::TimePoint event_timepoint_ = 0;
+
+    bool is_pressed_ = false;
+    std::array<std::uint8_t, 2> debounce_counts_{};
+};
+
+class Relay
+{
+public:
+    void setup(unsigned int short_duration_ms, unsigned int long_duration_ms)
+    {
+        short_duration_ms_ = short_duration_ms;
+        long_duration_ms_ = long_duration_ms;
+    }
+    void set_peer(Relay *peer)
+    {
+        peer_ = peer;
+    }
+
+    bool is_active() const
+    {
+        return active_ms_ > 0;
+    }
+
+    void activate(bool use_short_duration)
+    {
+        active_ms_ = use_short_duration ? short_duration_ms_ : long_duration_ms_;
+        if (peer_)
+            peer_->deactivate();
+    }
+    void deactivate()
+    {
+        active_ms_ = 0;
+    }
+
+    void process(unsigned int elapse_ms)
+    {
+        elapse_ms = std::min(elapse_ms, active_ms_);
+        active_ms_ -= elapse_ms;
+    }
+
+private:
+    unsigned int short_duration_ms_ = 2000;
+    unsigned int long_duration_ms_ = 10000;
+    unsigned int active_ms_ = 0;
+    Relay *peer_ = nullptr;
 };
 
 class IO
 {
 public:
+    enum class Type {None, Button, Relay};
+
     //Button API
     void setup_button(std::uint8_t pin)
     {
@@ -32,17 +129,13 @@ public:
     {
         if (!is(Type::Button))
             return false;
-        return button_.is_pressed;
+        return button_.is_pressed();
     }
-    bool get_button_event(ButtonEvent &event) const
+    bool get_button_event(Button::Event &event) const
     {
         if (!is(Type::Button))
             return false;
-        if (!button_.has_event)
-            return false;
-        event.pressed = button_.is_pressed;
-        event.is_long = button_.is_long_event;
-        return true;
+        return button_.get_event(event);
     }
 
     //Relay API
@@ -50,32 +143,38 @@ public:
     {
         type_ = Type::Relay;
         pin_.set_pin(pin).set_output(true);
-        relay_.short_duration_ms = short_duration_ms;
-        relay_.long_duration_ms = long_duration_ms;
+        relay_.setup(short_duration_ms, long_duration_ms);
     }
     bool relay_is_active() const
     {
         if (!is(Type::Relay))
             return false;
-        return relay_.active_ms > 0;
+        return relay_.is_active();
     }
     void activate_relay(bool use_short_duration = true)
     {
         if (!is(Type::Relay))
             return;
-        relay_.active_ms = use_short_duration ? relay_.short_duration_ms : relay_.long_duration_ms;
-        if (exclusive_io_)
-            exclusive_io_->deactivate_relay();
+        relay_.activate(use_short_duration);
     }
     void deactivate_relay()
     {
         if (!is(Type::Relay))
             return;
-        relay_.active_ms = 0;
+        relay_.deactivate();
     }
-    void set_exclusive(IO *io)
+    void set_peer(IO *io)
     {
-        exclusive_io_ = io;
+        if (!is(Type::Relay))
+            return;
+        if (io)
+        {
+            if (!io->is(Type::Relay))
+                return;
+            relay_.set_peer(&io->relay_);
+        }
+        else
+            relay_.set_peer(nullptr);
     }
 
     //Common API
@@ -87,38 +186,17 @@ public:
         {
             case Type::Button:
                 {
-                    button_.has_event = false;
-
                     pin_.check();
-                    const auto state_ix = pin_.is_input(true) ? Button::UpIX : Button::DownIX;
-                    if (button_.debounce_counts[state_ix] < Button::DebounceCount)
-                    {
-                        //Button is still debouncing
-                        ++button_.debounce_counts[state_ix];
-                        button_.debounce_counts[1u-state_ix] = 0;
-                    }
-                    else
-                    {
-                        //Button reached stable state
-                        const auto new_pressed = (state_ix == Button::DownIX);
-                        if (new_pressed != button_.is_pressed)
-                        {
-                            const auto now = Clock::now();
-                            button_.is_pressed = new_pressed;
-                            button_.has_event = true;
-                            button_.is_long_event = ((now-button_.event_timepoint) >= Button::LongDuration_ms);
 
-                            button_.event_timepoint = now;
-                        }
-                    }
+                    const auto state_ix = pin_.is_input(true) ? Button::UpIX : Button::DownIX;
+                    button_.process(state_ix, elapse_ms);
                 }
                 break;
             case Type::Relay:
                 {
                     pin_.set_output(!relay_is_active());
 
-                    elapse_ms = std::min(elapse_ms, relay_.active_ms);
-                    relay_.active_ms -= elapse_ms;
+                    relay_.process(elapse_ms);
                 }
                 break;
             default:
@@ -130,32 +208,8 @@ private:
     gubg::arduino::Pin pin_;
 
     Type type_ = Type::None;
-
-    struct Button
-    {
-        const static std::uint8_t DebounceCount = 16;
-        const static std::uint8_t UpIX = 0u;
-        const static std::uint8_t DownIX = 1u;
-        const static unsigned int LongDuration_ms = 500;
-
-        bool has_event = false;
-        bool is_long_event = false;
-        Clock::TimePoint event_timepoint = 0;
-
-        bool is_pressed = false;
-        std::array<std::uint8_t, 2> debounce_counts{};
-    };
     Button button_;
-
-    struct Relay
-    {
-        unsigned int short_duration_ms = 2000;
-        unsigned int long_duration_ms = 10000;
-        unsigned int active_ms = 0;
-    };
     Relay relay_;
-
-    IO *exclusive_io_ = nullptr;
 };
 
 
@@ -165,17 +219,23 @@ gubg::arduino::Elapsed<Clock::TimePoint> elapsed_ms;
 
 void setup()
 {
-    for (auto ix = 0u; ix < 2*7; ++ix)
-        ios[ix].setup_button(26+ix);
-    for (auto ix = 2*7; ix < 4*7; ++ix)
+    const unsigned int nr_buttons = 14;
+    const unsigned int nr_relays = 14;
+    for (auto i = 0u; i < nr_buttons; ++i)
     {
-        auto &io = ios[ix];
-        io.setup_relay(26+ix, 2000, 10000);
-        if (ix > 0 && ix%2 == 0)
+        const unsigned int my_ix = i;
+        ios[my_ix].setup_button(26+i);
+    }
+    for (auto i = 0u; i < nr_relays; ++i)
+    {
+        const unsigned int my_ix = nr_buttons+i;
+        auto &io = ios[my_ix];
+        io.setup_relay(40+i, 2000, 10000);
+        if (i > 0 && i%2 == 1)
         {
-            auto &other_io = ios[ix-1];
-            io.set_exclusive(&other_io);
-            other_io.set_exclusive(&io);
+            auto &other_io = ios[my_ix-1];
+            io.set_peer(&other_io);
+            other_io.set_peer(&io);
         }
     }
 }
@@ -188,7 +248,7 @@ void loop()
     {
         auto &io = ios[ix];
 
-        ButtonEvent button_event;
+        Button::Event button_event;
         if (io.get_button_event(button_event))
         {
             const auto relay_ix = ix+2*7;
