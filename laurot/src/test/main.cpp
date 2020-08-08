@@ -165,12 +165,12 @@ gubg::arduino::Elapsed<Clock::TimePoint> elapsed_ms;
 
 void setup()
 {
-    for (auto ix = 0u; ix < 7; ++ix)
-        ios[ix].setup_button(A0+ix);
-    for (auto ix = 7u; ix < 14; ++ix)
+    for (auto ix = 0u; ix < 2*7; ++ix)
+        ios[ix].setup_button(26+ix);
+    for (auto ix = 2*7; ix < 4*7; ++ix)
     {
         auto &io = ios[ix];
-        io.setup_relay(A0+ix, 2000, 10000);
+        io.setup_relay(26+ix, 2000, 10000);
         if (ix > 0 && ix%2 == 0)
         {
             auto &other_io = ios[ix-1];
@@ -191,7 +191,7 @@ void loop()
         ButtonEvent button_event;
         if (io.get_button_event(button_event))
         {
-            const auto relay_ix = ix+7;
+            const auto relay_ix = ix+2*7;
             if (relay_ix < ios.size())
             {
                 auto &relay = ios[relay_ix];
