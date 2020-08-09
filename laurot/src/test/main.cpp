@@ -1,6 +1,7 @@
 #include <gubg/arduino/Pin.hpp>
 #include <gubg/arduino/Elapsed.hpp>
 #include <gubg/arduino/Clock.hpp>
+#include <gubg/arduino/Timer.hpp>
 #include <gubg/std/array.hpp>
 #include <gubg/std/algorithm.hpp>
 
@@ -17,7 +18,6 @@ public:
     struct Event
     {
         bool pressed = false;
-        bool is_long = false;
     };
 
     const static std::uint8_t DebounceCount = 16;
@@ -25,22 +25,26 @@ public:
     const static std::uint8_t DownIX = 1u;
     const static unsigned int LongDuration_ms = 500;
 
+    void setup(std::uint8_t pin)
+    {
+        pin_.set_pin(pin).set_input(true);
+    }
+
     bool get_event(Event &event) const
     {
         if (!has_event_)
             return false;
         event.pressed = is_pressed_;
-        event.is_long = is_long_event_;
         return true;
     }
-    bool is_pressed() const
-    {
-        return is_pressed_;
-    }
 
-    void process(std::uint8_t state_ix, unsigned int elapse_ms)
+    void process(unsigned int elapse_ms)
     {
         has_event_ = false;
+
+        pin_.check();
+
+        const auto state_ix = pin_.is_input(true) ? Button::UpIX : Button::DownIX;
         if (debounce_counts_[state_ix] < Button::DebounceCount)
         {
             //Button is still debouncing
@@ -53,21 +57,15 @@ public:
             const auto new_pressed = (state_ix == Button::DownIX);
             if (new_pressed != is_pressed_)
             {
-                const auto now = Clock::now();
                 is_pressed_ = new_pressed;
                 has_event_ = true;
-                is_long_event_ = ((now-event_timepoint_) >= Button::LongDuration_ms);
-
-                event_timepoint_ = now;
             }
         }
     }
 
 private:
+    gubg::arduino::Pin pin_;
     bool has_event_ = false;
-    bool is_long_event_ = false;
-    Clock::TimePoint event_timepoint_ = 0;
-
     bool is_pressed_ = false;
     std::array<std::uint8_t, 2> debounce_counts_{};
 };
@@ -75,8 +73,10 @@ private:
 class Relay
 {
 public:
-    void setup(unsigned int short_duration_ms, unsigned int long_duration_ms)
+    void setup(std::uint8_t pin, unsigned int short_duration_ms, unsigned int long_duration_ms)
     {
+        pin_.set_pin(pin);
+        activate_(false);
         short_duration_ms_ = short_duration_ms;
         long_duration_ms_ = long_duration_ms;
     }
@@ -87,27 +87,119 @@ public:
 
     bool is_active() const
     {
-        return active_ms_ > 0;
+        return is_active_state_(state_);
     }
 
-    void activate(bool use_short_duration)
-    {
-        active_ms_ = use_short_duration ? short_duration_ms_ : long_duration_ms_;
-        if (peer_)
-            peer_->deactivate();
-    }
     void deactivate()
     {
-        active_ms_ = 0;
+        change_state_(State::Off);
     }
 
     void process(unsigned int elapse_ms)
     {
-        elapse_ms = std::min(elapse_ms, active_ms_);
-        active_ms_ -= elapse_ms;
+        auto on_timer = [&]()
+        {
+            switch (state_)
+            {
+                case State::DeactivatePeer:
+                    change_state_(State::ShortPress);
+                    break;
+                case State::ShortPress:
+                    change_state_(State::LongPress);
+                    break;
+                case State::On:
+                    change_state_(State::Off);
+                    break;
+                default:
+                    break;
+            }
+        };
+        timer_.process(elapse_ms, on_timer);
+    }
+    void process(const Button::Event &button_event)
+    {
+        switch (state_)
+        {
+            case State::Off:
+                if (button_event.pressed)
+                    change_state_((peer_ && peer_->is_active()) ? State::DeactivatePeer : State::ShortPress);
+                break;
+            case State::ShortPress:
+                change_state_(button_event.pressed ? State::Off : State::On);
+                break;
+            case State::On:
+                if (button_event.pressed)
+                    change_state_(State::Off);
+                break;
+        }
     }
 
 private:
+    enum class State {Off, DeactivatePeer, ShortPress, LongPress, On};
+
+    static bool is_active_state_(State state)
+    {
+        switch (state)
+        {
+            case State::ShortPress:
+            case State::LongPress:
+            case State::On:
+                return true;
+            default:
+                break;
+        }
+        return false;
+    }
+
+    void change_state_(State new_state)
+    {
+        if (new_state == state_)
+            return;
+
+        //Exit actions
+        timer_.stop();
+        switch (state_)
+        {
+            default:
+                break;
+        }
+
+        state_ = new_state;
+
+        //Enter actions
+        switch (state_)
+        {
+            case State::DeactivatePeer:
+                if (peer_)
+                    peer_->deactivate();
+                timer_.start(200);
+                break;
+            case State::ShortPress:
+                active_ms_ = short_duration_ms_;
+                timer_.start(200);
+                break;
+            case State::LongPress:
+                active_ms_ = long_duration_ms_;
+                change_state_(State::On);
+                break;
+            case State::On:
+                timer_.start(active_ms_);
+                break;
+            default:
+                break;
+        }
+        activate_(is_active_state_(state_));
+    }
+
+    void activate_(bool b)
+    {
+        //Pulling pin from relay down to 0V will activate the relay
+        pin_.set_output(!b);
+    }
+
+    gubg::arduino::Pin pin_;
+    State state_ = State::Off;
+    gubg::arduino::Timer<unsigned int> timer_;
     unsigned int short_duration_ms_ = 2000;
     unsigned int long_duration_ms_ = 10000;
     unsigned int active_ms_ = 0;
@@ -123,13 +215,7 @@ public:
     void setup_button(std::uint8_t pin)
     {
         type_ = Type::Button;
-        pin_.set_pin(pin).set_input(true);
-    }
-    bool button_is_pressed() const
-    {
-        if (!is(Type::Button))
-            return false;
-        return button_.is_pressed();
+        button_.setup(pin);
     }
     bool get_button_event(Button::Event &event) const
     {
@@ -142,26 +228,7 @@ public:
     void setup_relay(std::uint8_t pin, unsigned int short_duration_ms, unsigned int long_duration_ms)
     {
         type_ = Type::Relay;
-        pin_.set_pin(pin).set_output(true);
-        relay_.setup(short_duration_ms, long_duration_ms);
-    }
-    bool relay_is_active() const
-    {
-        if (!is(Type::Relay))
-            return false;
-        return relay_.is_active();
-    }
-    void activate_relay(bool use_short_duration = true)
-    {
-        if (!is(Type::Relay))
-            return;
-        relay_.activate(use_short_duration);
-    }
-    void deactivate_relay()
-    {
-        if (!is(Type::Relay))
-            return;
-        relay_.deactivate();
+        relay_.setup(pin, short_duration_ms, long_duration_ms);
     }
     void set_peer(IO *io)
     {
@@ -184,23 +251,18 @@ public:
     {
         switch (type_)
         {
-            case Type::Button:
-                {
-                    pin_.check();
-
-                    const auto state_ix = pin_.is_input(true) ? Button::UpIX : Button::DownIX;
-                    button_.process(state_ix, elapse_ms);
-                }
-                break;
-            case Type::Relay:
-                {
-                    pin_.set_output(!relay_is_active());
-
-                    relay_.process(elapse_ms);
-                }
-                break;
-            default:
-                break;
+            case Type::Button: button_.process(elapse_ms); break;
+            case Type::Relay:  relay_.process(elapse_ms);  break;
+            default: break;
+        }
+    }
+    void process(const Button::Event &button_event)
+    {
+        switch (type_)
+        {
+            case Type::Button: break;
+            case Type::Relay:  relay_.process(button_event);  break;
+            default: break;
         }
     }
 
@@ -255,18 +317,7 @@ void loop()
             if (relay_ix < ios.size())
             {
                 auto &relay = ios[relay_ix];
-                if (button_event.pressed)
-                {
-                    if (relay.relay_is_active())
-                        relay.deactivate_relay();
-                    else
-                        relay.activate_relay(true);
-                }
-                else
-                {
-                    if (button_event.is_long && relay.relay_is_active())
-                        relay.activate_relay(false);
-                }
+                relay.process(button_event);
             }
         }
 
