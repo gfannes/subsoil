@@ -200,8 +200,8 @@ private:
     gubg::arduino::Pin pin_;
     State state_ = State::Off;
     gubg::arduino::Timer<unsigned int> timer_;
-    unsigned int short_duration_ms_ = 2000;
-    unsigned int long_duration_ms_ = 10000;
+    unsigned int short_duration_ms_ = 10000;
+    unsigned int long_duration_ms_  = 40000;
     unsigned int active_ms_ = 0;
     Relay *peer_ = nullptr;
 };
@@ -292,7 +292,7 @@ void setup()
     {
         const unsigned int my_ix = nr_buttons+i;
         auto &io = ios[my_ix];
-        io.setup_relay(40+i, 2000, 10000);
+        io.setup_relay(40+i, 10000, 40000);
         if (i > 0 && i%2 == 1)
         {
             auto &other_io = ios[my_ix-1];
