@@ -1,0 +1,13 @@
+[2020]{
+    [9]{
+        [9](b:1040){
+            [installation of environment](e:1053)
+            [eten](s:pause)(e:1310)
+            [start of gubg::Tensor implementation during installation](d:30)
+            [installation of environment](e:1537)
+            [document env installation](s:blog)(e:1600)
+            [pause](s:pause)(e:1645)
+            [add proast support for convertion to nonleaf]
+        }
+    }
+}
