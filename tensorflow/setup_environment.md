@@ -10,7 +10,7 @@ You can find out your GPU model with a command like: `lspci | grep -i vga`.
 
 ```
 yay -S hdf5 graphviz opencv hdfview
-pip install --user numpy scipy matplotlib yaml h5py graphviz pydot-ng python-opencv tensorflow-gpu keras
+pip install --user numpy scipy matplotlib yaml h5py graphviz pydot-ng python-opencv tensorflow-gpu keras pandas sklearn
 ```
 
 ## Install GPU

@@ -1,5 +1,8 @@
 [2020]{
     [9]{
+        [8]{
+            [reading handson-ml: pg 30](d:100)
+        }
         [9](b:1040){
             [installation of environment](e:1053)
             [eten](s:pause)(e:1310)
@@ -7,7 +10,8 @@
             [installation of environment](e:1537)
             [document env installation](s:blog)(e:1600)
             [pause](s:pause)(e:1645)
-            [add proast support for convertion to nonleaf]
+            [add proast support for convertion to nonleaf](d:30)
+            [read ch1 handson-ml: done](e:1745)
         }
     }
 }
