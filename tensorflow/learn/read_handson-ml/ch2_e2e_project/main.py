@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
-import sklearn.model_selection as skms
+from sklearn import model_selection, impute
+import sklearn as sl
 
 def load_data(name):
     root = "https://raw.githubusercontent.com/ageron/handson-ml2/master"
@@ -39,12 +40,12 @@ def split_tt(data, ratio):
     stratifier = 'income_cat'
     data[stratifier] = pd.cut(data['median_income'], bins=[0, 2.35, 3.14, 3.96, 5.1, np.inf], labels=np.linspace(1,5,num=5))
     if 0:
-        tt = skms.train_test_split(data, test_size=ratio, random_state=random_state)
+        tt = sl.model_selection.train_test_split(data, test_size=ratio, random_state=random_state)
     else:
         if 0:
             data[stratifier].hist()
             plt.show()
-        sss = skms.StratifiedShuffleSplit(n_splits=1, test_size=ratio, random_state=random_state)
+        sss = sl.model_selection.StratifiedShuffleSplit(n_splits=1, test_size=ratio, random_state=random_state)
         tt = None
         for train_ix, test_ix in sss.split(data, data[stratifier]):
             tt = (data.loc[train_ix], data.loc[test_ix])
@@ -61,6 +62,12 @@ x, y = 'longitude', 'latitude'
 
 #Load data
 data = load_data("housing")
+cols_num, cols_cat = [], []
+if 'local_scope':
+    cat_cols = {'ocean_proximity'}
+    for name in data.columns:
+        cols = cols_cat if name in cat_cols else cols_num
+        cols.append(name)
 
 #Inspect data
 #  Raw data
@@ -98,10 +105,47 @@ tt = split_tt(data, 0.2)
 for name, t in zip("Train Test".split(), tt):
     print(f"{name} {len(t)}")
     t.info()
+(train, test) = tt
+
+
 #Pimp data
 #  Clean data
+train_num, train_cat = train[cols_num], train[cols_cat]
+if 'clean_numerical_data':
+    imputer = sl.impute.SimpleImputer(strategy="median")
+    imputer.fit(train_num)
+    train_num = pd.DataFrame(imputer.transform(train_num), index=train_num.index, columns=train_num.columns)
 #  Handle categorical data
 #    Ordinal, 1hot or embedding
+if 'handle_categorical_data':
+    strategy = 'ordinal'
+    strategy = 'onehot'
+    if strategy == 'ordinal':
+        def print_value_counts(train_cat):
+            for name in cols_cat:
+                print(name, '\n', train_cat[name].value_counts())
+        print_value_counts(train_cat)
+        ordcoder = sl.preprocessing.OrdinalEncoder()
+        ordcoder.fit(train_cat)
+        train_cat = pd.DataFrame(ordcoder.transform(train_cat), index=train_cat.index, columns=train_cat.columns)
+        print_value_counts(train_cat)
+    if strategy == 'onehot':
+        new_train_cat = None
+        for name in cols_cat:
+            data = train_cat[[name]]
+            onehotcoder = sl.preprocessing.OneHotEncoder()
+            onehotcoder.fit(data)
+            x = onehotcoder.transform(data)
+            print(x.shape)
+            data = pd.DataFrame(x.toarray(), index=data.index, columns=[f"{name}_{ix}" for ix in range(x.shape[1])])
+            print(data.columns)
+            if not new_train_cat:
+                new_train_cat = data
+            else:
+                new_train_cat.merge(data)
+        train_cat = new_train_cat
+    print(train_cat.head())
+
 #  Create derived columns
 #    Check correlation with target
 #Search for good model structures
