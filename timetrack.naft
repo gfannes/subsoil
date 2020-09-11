@@ -16,5 +16,8 @@
     }
     [11](b:1000){
         [reading handson-ml ch2 done](e:1100)
+        [pause](s:pause)(d:45)
+        [structure of program](e:1215)
+        [eten](s:pause)(e:1300)
     }
 }
