@@ -63,7 +63,7 @@
 </stylenode>
 </map_styles>
 </hook>
-<hook NAME="AutomaticEdgeColor" COUNTER="9" RULE="ON_BRANCH_CREATION"/>
+<hook NAME="AutomaticEdgeColor" COUNTER="10" RULE="ON_BRANCH_CREATION"/>
 <node TEXT="minder verklanken" POSITION="right" ID="ID_706763637" CREATED="1600427556220" MODIFIED="1600427560755">
 <edge COLOR="#0000ff"/>
 <node TEXT="affirmatie" ID="ID_601564902" CREATED="1600427512531" MODIFIED="1600427573683">
@@ -188,6 +188,12 @@
 <node TEXT="quit social media 181" ID="ID_1632977489" CREATED="1600435663091" MODIFIED="1600435831578"/>
 <node TEXT="drain the shallows 215" ID="ID_578828253" CREATED="1600435666513" MODIFIED="1600435835885"/>
 </node>
+</node>
+<node TEXT="software" POSITION="left" ID="ID_640010569" CREATED="1600451312830" MODIFIED="1600451316757">
+<edge COLOR="#007c7c"/>
+<node TEXT="Evince can do autoscroll" ID="ID_909510784" CREATED="1600451317676" MODIFIED="1600451327843"/>
+<node TEXT="jetzt allows single-word SR in browser" ID="ID_1612261150" CREATED="1600451330269" MODIFIED="1600451375703" LINK="https://github.com/ds300/jetzt"/>
+<node TEXT="spritz for android" ID="ID_339532186" CREATED="1600451745299" MODIFIED="1600451762445" LINK="https://spritz.com/"/>
 </node>
 </node>
 </map>
