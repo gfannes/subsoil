@@ -26,7 +26,10 @@
             [sr2: onthouden](e:940)
             [sr3: barrieres](e:1000)
             [pause](s:pause)(e:1023)
-            [reading ch7]
+            [setup ultisnip](d:30)
+            [testing sklearn custom pipelines](e:1245)
+            [eten](s:pause)(e:1430)
+            [implementation ch3](e:1806)
         }
     }
 }
