@@ -13,13 +13,20 @@
             [add proast support for convertion to nonleaf](d:30)
             [read ch1 handson-ml: done](e:1745)
         }
-    }
-    [11](b:1000){
-        [reading handson-ml ch2 done](e:1100)
-        [pause](s:pause)(d:45)
-        [structure of program](e:1215)
-        [eten](s:pause)(e:1300)
-        [implementation ch2](e:1620)
-        [koken](s:pause)
+        [11](b:1000){
+            [reading handson-ml ch2 done](e:1100)
+            [pause](s:pause)(d:45)
+            [structure of program](e:1215)
+            [eten](s:pause)(e:1300)
+            [implementation ch2](e:1620)
+            [koken](s:pause)
+        }
+        [23](b:842){
+            [sr1: concentratie](e:848)
+            [sr2: onthouden](e:940)
+            [sr3: barrieres](e:1000)
+            [pause](s:pause)(e:1023)
+            [reading ch7]
+        }
     }
 }

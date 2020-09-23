@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
-from sklearn import model_selection, impute, pipeline
+from sklearn import model_selection, impute, pipeline, compose
 import sklearn
 
 def load_data(name):
@@ -111,28 +111,30 @@ for name, t in zip("Train Test".split(), tt):
 #Pimp data
 #  Clean data
 train_num, train_cat = train[cols_num], train[cols_cat]
-pipeline = []
+pipeline_num, pipeline_cat = [], []
 if 'clean_numerical_data':
-    pipeline.append(('imputer', sklearn.impute.SimpleImputer(strategy="median")))
+    pipeline_num.append(('imputer', sklearn.impute.SimpleImputer(strategy="median")))
 #  Handle categorical data
 #    Ordinal, 1hot or embedding
 if 'handle_categorical_data':
     strategy = 'ordinal'
-    strategy = 'onehot'
+    # strategy = 'onehot'
     if strategy == 'ordinal':
         def print_value_counts(train_cat):
             for name in cols_cat:
                 print(name, '\n', train_cat[name].value_counts())
         print_value_counts(train_cat)
         ordcoder = sklearn.preprocessing.OrdinalEncoder()
-        ordcoder.fit(train_cat)
-        train_cat = pd.DataFrame(ordcoder.transform(train_cat), index=train_cat.index, columns=train_cat.columns)
-        print_value_counts(train_cat)
+        pipeline_cat.append(('ordinal', ordcoder))
+        # ordcoder.fit(train_cat)
+        # train_cat = pd.DataFrame(ordcoder.transform(train_cat), index=train_cat.index, columns=train_cat.columns)
+        # print_value_counts(train_cat)
     if strategy == 'onehot':
         new_train_cat = None
         for name in cols_cat:
             data = train_cat[[name]]
             onehotcoder = sklearn.preprocessing.OneHotEncoder()
+            pipeline_cat.append(('onehot', onehotcoder))
             onehotcoder.fit(data)
             x = onehotcoder.transform(data)
             print(x.shape)
@@ -146,40 +148,50 @@ if 'handle_categorical_data':
     print(train_cat.head())
 
 #  Create derived columns
-class DerivedVarsAdder(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin):
-    def __init__(self, column_names):
-        self.column_names = column_names.tolist()
-        self.new_column_names = []
-    def fit(self, data, y=None):
-        pass
-    def transform(self, data, y=None):
-        new_cols = (data,)
-        def append_ratio(avg_name, value_name, total_name):
-            self.new_column_names.append(avg_name)
-            value_ix, total_ix = (self.column_names.index(e) for e in (value_name, total_name))
-            new_col = data[:,value_ix]/data[:,total_ix]
-            new_col = new_col.reshape((len(new_col),1))
-            nonlocal new_cols
-            new_cols = new_cols+(new_col,)
-        append_ratio('avg_rooms', 'total_rooms', 'households')
-        append_ratio('avg_bedrooms', 'total_bedrooms', 'households')
-        append_ratio('household_size', 'population', 'households')
-        append_ratio('bedroom_ratio', 'total_bedrooms', 'total_rooms')
-        append_ratio('bedrooms_pp', 'total_bedrooms', 'population')
-        append_ratio('rooms_pp', 'total_rooms', 'population')
-        data = np.hstack(new_cols)
-        return data
-deriver = DerivedVarsAdder(train_num.columns)
+if 'create_derived_columns':
+    class DerivedVarsAdder(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin):
+        def __init__(self, column_names):
+            self.column_names = column_names.tolist()
+            self.new_column_names = []
+        def fit(self, data, y=None):
+            pass
+        def transform(self, data, y=None):
+            new_cols = (data,)
+            def append_ratio(avg_name, value_name, total_name):
+                self.new_column_names.append(avg_name)
+                value_ix, total_ix = (self.column_names.index(e) for e in (value_name, total_name))
+                new_col = data[:,value_ix]/data[:,total_ix]
+                new_col = new_col.reshape((len(new_col),1))
+                nonlocal new_cols
+                new_cols = new_cols+(new_col,)
+            append_ratio('avg_rooms', 'total_rooms', 'households')
+            append_ratio('avg_bedrooms', 'total_bedrooms', 'households')
+            append_ratio('household_size', 'population', 'households')
+            append_ratio('bedroom_ratio', 'total_bedrooms', 'total_rooms')
+            append_ratio('bedrooms_pp', 'total_bedrooms', 'population')
+            append_ratio('rooms_pp', 'total_rooms', 'population')
+            data = np.hstack(new_cols)
+            return data
+    deriver = DerivedVarsAdder(train_num.columns)
+    pipeline_num.append(('deriver', deriver))
 
-pipeline.append(('deriver', deriver))
-pipeline = sklearn.pipeline.Pipeline(pipeline)
+pipeline_num = sklearn.pipeline.Pipeline(pipeline_num)
+pipeline_cat = sklearn.pipeline.Pipeline(pipeline_cat)
+pipeline = sklearn.compose.ColumnTransformer([
+    ('num', pipeline_num, cols_num),
+    ('cat', pipeline_cat, cols_cat)
+    ])
 
-pipeline.fit(train_num)
+pipeline.fit(train)
 
-train_num = pd.DataFrame(pipeline.transform(train_num), index=train_num.index, columns=train_num.columns.tolist()+deriver.new_column_names)
+train_num = pd.DataFrame(pipeline_num.transform(train_num), index=train_num.index, columns=train_num.columns.tolist()+deriver.new_column_names)
 #    Check correlation with target
 corr_matrix = train_num.corr()
 print(corr_matrix[target].sort_values(ascending=False))
+
+print(f'train_num.describe()\n: {train_num.describe()}')
+train_num.info()
+
 #Search for good model structures
 #  Create Scikit pipeline
 #    Derivation of new columns
