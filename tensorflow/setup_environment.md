@@ -34,6 +34,8 @@ if not tf.test.is_gpu_available():
 print(f"Your system has GPU support: {tf.test.gpu_device_name()}")
 ```
 
+When running GPU computations, you can use `nvtop` to monitor the GPU usage.
+
 ## Links
 
 [Installing TensorFlow and CUDA on Manjaro](https://medium.com/@Soroush/installing-tensorflow-and-cuda-on-manjaro-linux-6cb64c5ece1e)
