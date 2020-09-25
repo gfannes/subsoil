@@ -13,3 +13,4 @@
 * [external](key:ch2_e2e_project)
 * [external](key:ch3_classification)
 * [external](key:ch4_training)
+* [external](key:ch10_ann_keras)
