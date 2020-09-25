@@ -1,6 +1,10 @@
 import numpy as np
 import sklearn
-from sklearn import linear_model, model_selection, base, metrics
+from sklearn import linear_model, model_selection, base, metrics, svm
+import functools
+import matplotlib
+import matplotlib.pyplot as plt
+import math
 
 if False:
     from sklearn import datasets
@@ -95,12 +99,91 @@ if 'CV predictions':
     print( f'recall: {sklearn.metrics.recall_score(train.labels01, cv_predictions)}' )
     print( f'harmonic mean of precision and recall: {sklearn.metrics.f1_score(train.labels01, cv_predictions)}' )
 
-if 'CV precision/recall curve':
-    cv_scores = sklearn.model_selection.cross_val_predict(clas, train.inputs, train.labels01, cv=3, method='decision_function')
-    thresholds = np.unique(cv_scores)
-    precisions = [sklearn.metrics.precision_score(train.labels01, (cv_scores > threshold)) for threshold in thresholds]
-    recalls    = [sklearn.metrics.recall_score   (train.labels01, (cv_scores > threshold)) for threshold in thresholds]
-    plt.plot(thresholds, precisions, label='precision')
-    plt.plot(thresholds, recalls, label='recall')
+def cache(ftor):
+    cached_value = None
+    def helper():
+        nonlocal cached_value
+        if cached_value is None:
+            cached_value = ftor()
+        return cached_value
+    return helper
+
+@cache
+def compute_cv_scores():
+    print("Computing")
+    return sklearn.model_selection.cross_val_predict(clas, train.inputs, train.labels01, cv=3, method='decision_function')
+
+if 0*'CV precision/recall curve':
+    cv_scores = compute_cv_scores()
+    def each_precision_recall():
+        thresholds = np.unique(cv_scores)
+        for ix in range(len(thresholds)-1):
+            threshold = thresholds[ix]
+            precision = sklearn.metrics.precision_score(train.labels01, (cv_scores > threshold))
+            recall = sklearn.metrics.recall_score(train.labels01, (cv_scores > threshold))
+            yield threshold, precision, recall
+    tpr = np.array(list(each_precision_recall()))
+    # plt.plot(tpr[:,0], tpr[:,1], label='precision')
+    plt.plot(tpr[:,1], tpr[:,2], label='recall')
     plt.legend()
+    plt.show()
+if 0*'CV ROC':
+    cv_scores = compute_cv_scores()
+    print( f'AUC: {sklearn.metrics.roc_auc_score(train.labels01, cv_scores)}' )
+    fpr, tpr, _ = sklearn.metrics.roc_curve(train.labels01, cv_scores)
+    plt.plot(fpr, tpr, '-')
+    plt.show()
+
+if 'SVM':
+    svm =sklearn.svm.SVC()
+    cv_scores = sklearn.model_selection.cross_val_score(svm, train.inputs, train.labels, cv=3, scoring='accuracy')
+    print(cv_scores)
+    cv_predictions = sklearn.model_selection.cross_val_predict(svm, train.inputs, train.labels, cv=3)
+    confusion_matrix = sklearn.metrics.confusion_matrix(train.labels, cv_predictions).astype('float64')
+    print(confusion_matrix)
+    sums = confusion_matrix.sum(axis=1)
+    print(sums)
+    confusion_matrix = confusion_matrix / sums
+    # confusion_matrix = confusion_matrix * (np.ones(confusion_matrix.shape)-np.eye(confusion_matrix.shape[0]))
+    np.fill_diagonal(confusion_matrix, 0)
+    print(confusion_matrix)
+    if 0*'plot':
+        plt.matshow(confusion_matrix)
+        plt.show()
+
+    def plot_digits(instances, images_per_row=10, **options):
+        size = 28
+        images_per_row = min(len(instances), images_per_row)
+        images = [instance.reshape(size,size) for instance in instances]
+        n_rows = (len(instances) - 1) // images_per_row + 1
+        row_images = []
+        n_empty = n_rows * images_per_row - len(instances)
+        images.append(np.zeros((size, size * n_empty)))
+        for row in range(n_rows):
+            rimages = images[row * images_per_row : (row + 1) * images_per_row]
+            row_images.append(np.concatenate(rimages, axis=1))
+        image = np.concatenate(row_images, axis=0)
+        plt.imshow(image, cmap = matplotlib.cm.binary, **options)
+        plt.axis("off")
+    def my_plot_digits(images, nr_per_row=5):
+        nr_images = len(images)
+        if not nr_images:
+            return
+        shape = images[0].shape
+        nn = nr_per_row*nr_per_row
+        if nr_images < nn:
+            images = np.concatenate([images, np.zeros((nn-nr_images,)+shape)], axis=0)
+        cols = [np.vstack(images[ix:ix+nr_per_row]) for ix in range(0, nn, nr_per_row)]
+        image = np.hstack(cols)
+        plt.imshow(image)
+
+    cla, clb = 4, 9
+    ta = train.images[(train.labels==cla) & (cv_predictions==cla)]
+    tb = train.images[(train.labels==clb) & (cv_predictions==clb)]
+    fa = train.images[(train.labels==clb) & (cv_predictions==cla)]
+    fb = train.images[(train.labels==cla) & (cv_predictions==clb)]
+    plt.subplot(221); my_plot_digits(ta, nr_per_row=5)
+    plt.subplot(222); my_plot_digits(fb, nr_per_row=5)
+    plt.subplot(223); my_plot_digits(fa, nr_per_row=5)
+    plt.subplot(224); my_plot_digits(tb, nr_per_row=5)
     plt.show()

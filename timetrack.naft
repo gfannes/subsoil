@@ -31,5 +31,9 @@
             [eten](s:pause)(e:1430)
             [implementation ch3](e:1806)
         }
+        [25](b:923){
+            [impl ch3: classification](e:1228)
+            [eten](s:pause)(e:1307)
+        }
     }
 }
