@@ -2,7 +2,7 @@
 <!--To view this file, download free mind mapping software Freeplane from http://freeplane.sourceforge.net -->
 <node TEXT="Hands-On ML" FOLDED="false" ID="ID_288381357" CREATED="1600873842103" MODIFIED="1600874110483" STYLE="oval">
 <font SIZE="18"/>
-<hook NAME="MapStyle" zoom="1.771">
+<hook NAME="MapStyle" zoom="1.331">
     <properties edgeColorConfiguration="#808080ff,#ff0000ff,#0000ffff,#00ff00ff,#ff00ffff,#00ffffff,#7c0000ff,#00007cff,#007c00ff,#7c007cff,#007c7cff,#7c7c00ff" fit_to_viewport="false"/>
 
 <map_styles>
@@ -88,7 +88,16 @@
 <node TEXT="f1=harmonic_mean(precision, recall)" ID="ID_592555602" CREATED="1600875298841" MODIFIED="1600875322151">
 <node TEXT="metrics.f1_score(act, pred)" ID="ID_1457847969" CREATED="1600875324580" MODIFIED="1600875335192"/>
 </node>
+<node TEXT="ROC curve" ID="ID_1940889510" CREATED="1601023121502" MODIFIED="1601023130886">
+<node TEXT="FPR vs TPR" ID="ID_911550187" CREATED="1601023132042" MODIFIED="1601023140151"/>
+<node TEXT="AUC" ID="ID_1801974321" CREATED="1601023140846" MODIFIED="1601023144448">
+<node TEXT="probability that a random False and random True are ordered correctly" ID="ID_668577615" CREATED="1601023144799" MODIFIED="1601023169857"/>
 </node>
+</node>
+</node>
+</node>
+<node TEXT="MULTICLASS" ID="ID_1099698198" CREATED="1601023174151" MODIFIED="1601023183619">
+<node TEXT="sklearn.svm.SVC()" ID="ID_347160106" CREATED="1601023214689" MODIFIED="1601023221973"/>
 </node>
 </node>
 </node>
