@@ -36,5 +36,12 @@
             [eten](s:pause)(e:1307)
             [impl ch4 and ch10](e:1736)
         }
+        [30](b:900){
+            [reading ch11](e:1100)
+            [reading mdct](e:1200)
+            [impl dct4](e:1222)
+            [eten](e:1330)(s:pause)
+            [testing dct4, sin and sin2]
+        }
     }
 }
