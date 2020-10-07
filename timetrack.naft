@@ -48,6 +48,9 @@
         [7](b:830){
             [setup notion priority system](s:pause)(e:1200)
             [auto-encoder codec plan](e:1230)
+            [eten](s:pause)(e:1330)(s:pause)
+            [verkoop en afsluiten volvo](s:pause)(e:1600)
+            [impl aeac.py](e:1745)
         }
     }
 }
