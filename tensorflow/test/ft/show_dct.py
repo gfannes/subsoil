@@ -28,17 +28,19 @@ blocksize = 16
 convertor = Convertor(blocksize)
 all_freqs = convertor.to_freqs(all_samples)
 
-if 0*'show freqs':
-    for ix in range(0,blocksize,4):
-        plt.plot(all_freqs[:,ix:ix+4])
-        plt.show()
 for freqs in all_freqs:
     if 0*'add noise':
-        noise = 0.01
-        freqs += np.random.standard_normal(freqs.shape)*noise
+        noise = 0.001
+        for ix in range(2,blocksize):
+            freqs[ix] += np.random.randn(1)*noise
     if 1*'zero some bands':
-        nr_zero_bands = 14
+        nr_zero_bands = 4
         freqs[-nr_zero_bands:] *= 0
+        # freqs[2:2+nr_zero_bands] *= 0
+if 1*'show freqs':
+    for ix in range(0,blocksize,2):
+        plt.plot(all_freqs[:,ix:ix+2])
+        plt.show()
 
 all_samples_recon = convertor.from_freqs(all_freqs)
 
