@@ -2,7 +2,7 @@
 <!--To view this file, download free mind mapping software Freeplane from http://freeplane.sourceforge.net -->
 <node TEXT="auto-encoder&#xa;audio codec" FOLDED="false" ID="ID_494991099" CREATED="1602064931963" MODIFIED="1602065360519" STYLE="oval">
 <font SIZE="18"/>
-<hook NAME="MapStyle">
+<hook NAME="MapStyle" zoom="1.331">
     <properties edgeColorConfiguration="#808080ff,#ff0000ff,#0000ffff,#00ff00ff,#ff00ffff,#00ffffff,#7c0000ff,#00007cff,#007c00ff,#7c007cff,#007c7cff,#7c7c00ff" fit_to_viewport="false"/>
 
 <map_styles>
@@ -91,6 +91,7 @@
 </node>
 <node TEXT="blocksize" ID="ID_700021934" CREATED="1602065674927" MODIFIED="1602065677679"/>
 <node TEXT="mode" ID="ID_427443139" CREATED="1602065791178" MODIFIED="1602065792421">
+<node TEXT="create" ID="ID_1035052609" CREATED="1602666112466" MODIFIED="1602666114235"/>
 <node TEXT="encode" ID="ID_385589689" CREATED="1602065793409" MODIFIED="1602065801258"/>
 <node TEXT="decode" ID="ID_211010395" CREATED="1602065802047" MODIFIED="1602065803465"/>
 <node TEXT="encdec" ID="ID_1848528343" CREATED="1602065804077" MODIFIED="1602065807183"/>

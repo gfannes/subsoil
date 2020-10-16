@@ -45,12 +45,23 @@
         }
     }
     [10]{
+        [2]{
+            [pedagogische studiodag kids](s:pause)(d:800)
+        }
         [7](b:830){
             [setup notion priority system](s:pause)(e:1200)
             [auto-encoder codec plan](e:1230)
             [eten](s:pause)(e:1330)(s:pause)
             [verkoop en afsluiten volvo](s:pause)(e:1600)
             [impl aeac.py](e:1745)
+        }
+        [9]{
+            [dev ahp in python](s:pause)(d:800)
+        }
+        [14](b:830){
+            [printen grills sb](s:pause)(e:1030)
+            [wip on aeac](e:1220)
+            [eten](s:pause)(e:1315)
         }
     }
 }
