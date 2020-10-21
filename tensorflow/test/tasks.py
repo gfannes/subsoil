@@ -16,7 +16,8 @@ def test(c):
             # {'args': '-h'},
             # {'args': '-i audio/WelcomeToAuro3D.wav', 'rc':2},
             # {'args': '-m create -i audio/impulse.wav -o data'},
-            {'args': '-m create -i audio -o data.wav'},
+            # {'args': '-m create -i audio -o data.wav'},
+            {'args': '-m test -i audio -o data.wav'},
             # {'args': '-m create -i audio -o data'},
             ]
     for scenario in scenarios:

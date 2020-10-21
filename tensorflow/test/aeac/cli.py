@@ -23,7 +23,7 @@ def get_options():
     options = Options()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--mode', dest='mode', action='store', choices={'create','encode','decode','encdec','train'}, required=True)
+    parser.add_argument('-m', '--mode', dest='mode', action='store', choices={'test','create','encode','decode','encdec','train'}, required=True)
     parser.add_argument('-i', '--input', dest='input', action='store', help='Input file or folder')
     parser.add_argument('-o', '--output', dest='output', action='store', help='Output file or folder')
     parser.add_argument('-b', '--block_size', dest='block_size', action='store', default=options.block_size, help=f'Block size, default {options.block_size}')
@@ -34,7 +34,7 @@ def get_options():
     for name in ['mode','block_size','output']:
         setattr(options, name, getattr(raw_args, name))
     if 'process inputs':
-        extension = {'create':'wav'}.get(options.mode, None)
+        extension = {'create':'wav','test':'wav'}.get(options.mode, None)
         if os.path.isdir(raw_args.input):
             if extension is None:
                 raise SystemExit( f'No globbing supported in mode "{raw_args.mode}" for folder "{raw_args.input}".' )
