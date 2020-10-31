@@ -7,22 +7,25 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 class Wav:
-    def load_time_blocks(wav_fps, block_size):
+    def load_time_blocks(wav_fps, block_size, block_cnt=None):
         data = []
         for wav_fp in wav_fps:
             samples, sample_rate = soundfile.read(wav_fp.path())
             sample_cnt = len(samples)
-            block_cnt = sample_cnt//block_size
+            my_block_cnt = sample_cnt//block_size
             if len(samples.shape)==1:
                 samples = samples.reshape((sample_cnt,1))
             channel_cnt = samples.shape[1]
             for channel_ix in range(channel_cnt):
-                blocks = np.zeros((block_cnt, block_size))
-                for block_ix in range(block_cnt):
+                blocks = np.zeros((my_block_cnt, block_size))
+                for block_ix in range(my_block_cnt):
                     sample_ix = block_ix*block_size
                     blocks[block_ix,:] = samples[sample_ix:sample_ix+block_size, channel_ix]
                 data.append(blocks)
-        return np.vstack(data)
+        blocks = np.vstack(data)
+        if block_cnt is not None:
+            blocks = blocks[:block_cnt]
+        return blocks
 
 class DiscreteSineTransform:
     def to_time(block_size):
@@ -34,9 +37,10 @@ class DiscreteSineTransform:
 class Preprocessor:
     def __init__(self, block_size):
         self.block_size = block_size
-        window = tf.constant(tf.linspace(1.0, 0.0, self.block_size+1), dtype=tf.float32)
-        self.window_front = window[1:]
-        self.window_back  = tf.reverse(window[:-1], [0])
+        window = np.linspace(1.0, 0.0, self.block_size+1)
+        window_t = tf.constant(window, dtype=tf.float32)
+        self.window_front = window_t[1:]
+        self.window_back  = tf.reverse(window_t[:-1], [0])
         self.to_freq = DiscreteSineTransform.to_freq(self.block_size)
         self.to_time = DiscreteSineTransform.to_time(self.block_size)
 
