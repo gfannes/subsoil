@@ -6,7 +6,7 @@ w1 = 4;
 w2 = 45;
 w3 = 6;
 
-h1 = 15;
+h1 = 20;
 h2 = 55;
 h3 = 125;
 
@@ -16,7 +16,8 @@ module one(i){
     w = w1+w2;
     ww = w1;
     translate([0,i*w,0]){
-        difference(){
+        difference()
+        {
             union(){
                 translate([0,-(w+ww)/2,0])
                 cube([w3,w+ww,h2]);
