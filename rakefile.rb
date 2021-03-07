@@ -210,3 +210,14 @@ namespace :vst do
         end
     end
 end
+
+namespace :bbio do
+    app = nil
+    task :build do
+        app = cooker().generate(:ninja, "bbio/app").ninja()
+    end
+    task :test => :build do
+        app.run("-h")
+        app.run("-i", "WelcomeToAuro3D.wav", "-V", "1", "-s", "1024", "-o", "test.wav", "-n", "-1")
+    end
+end

@@ -105,3 +105,10 @@ root.book("quiz", fun(b){
         rcp.library("sfml-audio")
     })
 })
+root.book("bbio", fun(b){
+    b.recipe("app", TargetType.Executable, fun(rcp){
+        rcp.add("bbio/src", "**.[hc]pp")
+        rcp.depends_on("gubg/std/func")
+        rcp.depends_on("gubg/io/func")
+    })
+})
