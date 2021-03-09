@@ -144,7 +144,7 @@ public:
         if (setup_default_structure || gubg::imgui::select_file("MLP structure", structure_fn_))
         {
             if (setup_default_structure)
-                structure_fn_ = "/home/geert/subsoil/mlp.tanh_deep_network.naft";
+                structure_fn_ = std::filesystem::current_path() / "mlp.tanh_deep_network.naft";
             std::cout << "Selected structure file " << structure_fn_ << std::endl;
             learn_.reset();
             model_.reset();
@@ -308,7 +308,7 @@ public:
         if (setup_default_data || gubg::imgui::select_file("Dataset", data_fn_))
         {
             if (setup_default_data)
-                data_fn_ = "/home/geert/subsoil/data.noisy_sine.naft";
+                data_fn_ = std::filesystem::current_path() / "data.noisy_sine.naft";
             std::cout << "Selected data file " << data_fn_ << std::endl;
             learn_.reset();
             dataset_.reset();
@@ -469,9 +469,12 @@ public:
                 ImGui::SameLine();
                 if (ImGui::RadioButton("Metropolis", learn.algo == Algo::Metropolis))
                     learn.algo = Algo::Metropolis;
-
+                ImGui::SameLine();
                 if (ImGui::RadioButton("Steepest descent", learn.algo == Algo::SteepestDescent))
                     learn.algo = Algo::SteepestDescent;
+
+                if (ImGui::RadioButton("Forward descent", learn.algo == Algo::ForwardDescent))
+                    learn.algo = Algo::ForwardDescent;
                 ImGui::SameLine();
                 if (ImGui::RadioButton("Scaled Conjugate Gradient", learn.algo == Algo::SCG))
                     learn.algo = Algo::SCG;
@@ -551,6 +554,16 @@ public:
                                 trainer.set_max_gradient_norm(10.0);
                                 double newlp;
                                 MSS(trainer.train_sd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.sd_step));
+                            }
+                            break;
+                        case Algo::ForwardDescent:
+                            {
+                                learn.fwd_step = std::max(learn.fwd_step, 0.0000001f);
+                                ImGui::SliderFloat("Forward descent step", &learn.fwd_step, 0.0000001, 1.0);
+
+                                /* trainer.set_max_gradient_norm(10.0); */
+                                double newlp;
+                                MSS(trainer.train_fwd(newlp, model.weights.data(), model.cost_stddev, model.weights_stddev, learn.fwd_step));
                             }
                             break;
                         case Algo::SCG:
@@ -747,7 +760,7 @@ private:
     std::filesystem::path data_fn_;
     std::optional<DataSet> dataset_;
 
-    enum class Algo {NoLearn, Exhaustive, Metropolis, SteepestDescent, SCG, Adam};
+    enum class Algo {NoLearn, Exhaustive, Metropolis, SteepestDescent, ForwardDescent, SCG, Adam};
     struct Learn
     {
         bool do_learn = false;
@@ -757,6 +770,7 @@ private:
         std::optional<gubg::neural::Trainer<double>> trainer;
         Algo algo = Algo::NoLearn;
         float sd_step = 0.01;
+        float fwd_step = 1.0;
         float motion_stddev = 0.001;
         int exhaustive_nr = 10;
         std::vector<unsigned int> current_ixs;

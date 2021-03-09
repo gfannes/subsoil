@@ -110,5 +110,6 @@ root.book("bbio", fun(b){
         rcp.add("bbio/src", "**.[hc]pp")
         rcp.depends_on("gubg/std/func")
         rcp.depends_on("gubg/io/func")
+        rcp.depends_on("gubg/ml/func")
     })
 })
