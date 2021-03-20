@@ -5,7 +5,7 @@ diam = 2.8;
 
 difference()
 {
-    cube([157,20,20], true);
+    cube([157,15,15], true);
 
     color("green")
     rotate(90, [0,1,0])
