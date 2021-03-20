@@ -1,12 +1,8 @@
 #include <app/App.hpp>
 #include <app/transform/WavIO.hpp>
-#include <gubg/ml/adadelta/Minimizer.hpp>
-#include <gubg/ml/fwd/Minimizer.hpp>
+#include <app/transform/LinearPrediction.hpp>
 #include <gubg/Strange.hpp>
 #include <gubg/mss.hpp>
-#include <cmath>
-#include <numeric>
-#include <iomanip>
 
 namespace app { 
 
@@ -59,16 +55,25 @@ namespace app {
             gubg::Strange strange{str};
 
             std::string type;
-            MSS(strange.pop_until(type, ':'));
+            MSS(strange.pop_until(type, ':') || strange.pop_all(type), std::cout << "Error: could not parse the transform type" << std::endl);
+
+            transform::KeyValues kvs;
+            for (gubg::Strange strange2; strange.pop_until(strange2, ':') || strange.pop_all(strange2); )
+            {
+                auto &kv = kvs.emplace_back();
+                strange2.pop_until(kv.first, '=') || strange2.pop_all(kv.first);
+                strange2.pop_all(kv.second);
+            }
 
             transform::Interface::Ptr ptr;
             if (false) {}
             else if (type == "wavin") ptr.reset(new transform::WavInput{});
             else if (type == "wavout") ptr.reset(new transform::WavOutput{});
+            else if (type == "lp") ptr.reset(new transform::LinearPrediction{});
             else MSS(false, std::cout << "Error: unknown type \"" << type << "\"" << std::endl);
 
             MSS(!!ptr);
-            MSS(ptr->setup(strange.str(), metadata_));
+            MSS(ptr->setup(kvs, metadata_));
 
             transforms_.push_back(ptr);
         }

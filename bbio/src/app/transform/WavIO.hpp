@@ -11,15 +11,29 @@ namespace app { namespace transform {
     class WavInput: public Interface
     {
     public:
-        bool setup(const std::string &str, Metadata &md) override
+        bool setup(const KeyValues &kvs, Metadata &md) override
         {
             MSS_BEGIN(bool);
 
-            MSS(reader_.load(str, md.block_size));
+            std::optional<std::string> filepath;
+            for (const auto &kv: kvs)
+            {
+                if (false) {}
+                else if (kv.first == "fp") filepath = kv.second;
+                else if (kv.first == "skip") block_index_ = std::stoul(kv.second);
+                else if (kv.second.empty())
+                    filepath = kv.first;
+                else MSS(false, std::cout << "Error: could not interpret KV " << kv.first << " " << kv.second << std::endl);
+            }
+
+            MSS(!!filepath);
+
+            MSS(reader_.load(*filepath, md.block_size));
             MSS(!!reader_.format);
             md.sample_rate = reader_.format->sample_rate;
             md.bits_per_sample = reader_.format->bits_per_sample;
-            md.max_block_count = reader_.block_count();
+            MSS(block_index_ <= reader_.block_count());
+            md.max_block_count = reader_.block_count()-block_index_;
 
             MSS_END();
         }
@@ -46,10 +60,21 @@ namespace app { namespace transform {
     class WavOutput: public Interface
     {
     public:
-        bool setup(const std::string &str, Metadata &md) override
+        bool setup(const KeyValues &kvs, Metadata &md) override
         {
             MSS_BEGIN(bool);
-            MSS(writer_.open(str, md.block_size, 1, md.sample_rate, md.bits_per_sample));
+
+            std::optional<std::string> filepath;
+            for (const auto &kv: kvs)
+            {
+                if (false) {}
+                else if (kv.first == "fp") filepath = kv.second;
+                else filepath = kv.first;
+            }
+
+            MSS(!!filepath);
+            MSS(writer_.open(*filepath, md.block_size, 1, md.sample_rate, md.bits_per_sample));
+
             MSS_END();
         }
 
@@ -64,6 +89,9 @@ namespace app { namespace transform {
             MSS(vec.size() == writer_.block_size());
 
             MSS(writer_.write_mono(vec.data()));
+
+            //There might be a transform after us that wants to continue the chain
+            output = input;
 
             MSS_END();
         }

@@ -2,14 +2,19 @@
 #define HEADER_app_transform_LinearPrediction_hpp_ALREADY_INCLUDED
 
 #include <app/transform/Interface.hpp>
+#include <gubg/ml/adadelta/Minimizer.hpp>
+#include <gubg/ml/fwd/Minimizer.hpp>
 #include <gubg/mss.hpp>
+#include <cmath>
+#include <numeric>
+#include <iomanip>
 
 namespace app { namespace transform { 
 
     class LinearPrediction: public Interface
     {
     public:
-        bool setup(const std::string &str, Metadata &md) override
+        bool setup(const KeyValues &kv, Metadata &md) override
         {
             MSS_BEGIN(bool);
             MSS_END();
@@ -18,6 +23,15 @@ namespace app { namespace transform {
         bool transform(const Block &input, Block &output) override
         {
             MSS_BEGIN(bool);
+
+            output = input;
+            for (auto &vec: output)
+                for (auto &val: vec)
+                {
+                    const auto orig = val;
+                    val = orig-prev_;
+                    prev_ = orig;
+                }
 
             /* std::cout << "Input: " << model.avg_cost_diffs(input_data) << " " << model.max_cost_diffs(input_data) << std::endl; */
 
@@ -35,9 +49,12 @@ namespace app { namespace transform {
             /* const auto my_avg_cost = model.avg_cost_diffs(output_data); */
             /* total_avg_cost += my_avg_cost; */
             /* std::cout << "Output: " << my_avg_cost << " " << model.max_cost_diffs(output_data) << std::endl; */
+
             MSS_END();
         }
+
     private:
+        float prev_ = 0;
     };
 
     class Model

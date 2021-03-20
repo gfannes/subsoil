@@ -14,7 +14,7 @@ namespace app { namespace transform {
 
         virtual ~Interface() {}
 
-        virtual bool setup(const std::string &, Metadata &) = 0;
+        virtual bool setup(const KeyValues &, Metadata &) = 0;
         virtual bool transform(const Block &input, Block &output) = 0;
     };
 

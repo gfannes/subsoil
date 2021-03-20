@@ -222,6 +222,6 @@ namespace :bbio do
     desc "Test bbio"
     task :test => :build do
         app.run("-h")
-        app.run("-V", "1", "-s", "1024", "-t", "wavin:WelcomeToAuro3D.wav", "-t", "wavout:test.wav", "-n", "-1")
+        app.run("-V", "1", "-s", "1024", "-t", "wavin:fp=WelcomeToAuro3D.wav:skip=0", "-t", "lp", "-t", "wavout:fp=test.wav", "-t", "lp", "-t", "wavout:test2.wav", "-n", "-1")
     end
 end
