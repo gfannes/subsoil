@@ -213,13 +213,15 @@ end
 
 namespace :bbio do
     app = nil
+    desc "Build bbio"
     task :build do
         mode = :release
         mode = :debug
         app = cooker().option(mode).generate(:ninja, "bbio/app").ninja()
     end
+    desc "Test bbio"
     task :test => :build do
         app.run("-h")
-        app.run("-i", "WelcomeToAuro3D.wav", "-V", "1", "-s", "1024", "-o", "test.wav", "-n", "1")
+        app.run("-V", "1", "-s", "1024", "-t", "wavin:WelcomeToAuro3D.wav", "-t", "wavout:test.wav", "-n", "-1")
     end
 end
