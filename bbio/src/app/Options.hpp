@@ -15,7 +15,7 @@ namespace app {
         int verbose_level = 0;
         unsigned int block_size = 0;
         std::optional<unsigned int> block_count;
-        std::list<std::string> transforms;
+        std::list<std::string> codecs;
 
         bool parse(int argc, const char **argv);
 

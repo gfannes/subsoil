@@ -1,14 +1,14 @@
-#ifndef HEADER_app_transform_WavIO_hpp_ALREADY_INCLUDED
-#define HEADER_app_transform_WavIO_hpp_ALREADY_INCLUDED
+#ifndef HEADER_app_codec_WavIO_hpp_ALREADY_INCLUDED
+#define HEADER_app_codec_WavIO_hpp_ALREADY_INCLUDED
 
-#include <app/transform/Interface.hpp>
+#include <app/codec/Interface.hpp>
 #include <gubg/wav/Reader.hpp>
 #include <gubg/wav/Writer.hpp>
 #include <gubg/mss.hpp>
 
-namespace app { namespace transform { 
+namespace app { namespace codec { namespace pcm { 
 
-    class WavInput: public Interface
+    class Reader: public Interface
     {
     public:
         bool setup(const KeyValues &kvs, Metadata &md) override
@@ -38,7 +38,7 @@ namespace app { namespace transform {
             MSS_END();
         }
 
-        bool transform(const Block &input, Block &output) override
+        bool operator()(const Block &input, Block &output) override
         {
             MSS_BEGIN(bool);
 
@@ -57,7 +57,7 @@ namespace app { namespace transform {
         unsigned int block_index_ = 0;
     };
 
-    class WavOutput: public Interface
+    class Writer: public Interface
     {
     public:
         bool setup(const KeyValues &kvs, Metadata &md) override
@@ -78,7 +78,7 @@ namespace app { namespace transform {
             MSS_END();
         }
 
-        bool transform(const Block &input, Block &output) override
+        bool operator()(const Block &input, Block &output) override
         {
             MSS_BEGIN(bool);
 
@@ -90,7 +90,7 @@ namespace app { namespace transform {
 
             MSS(writer_.write_mono(vec.data()));
 
-            //There might be a transform after us that wants to continue the chain
+            //There might be a codec after us that wants to continue the chain
             output = input;
 
             MSS_END();
@@ -99,6 +99,6 @@ namespace app { namespace transform {
         gubg::wav::Writer writer_;
     };
 
-} } 
+} } } 
 
 #endif

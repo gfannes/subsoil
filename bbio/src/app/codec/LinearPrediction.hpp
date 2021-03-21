@@ -1,7 +1,7 @@
-#ifndef HEADER_app_transform_LinearPrediction_hpp_ALREADY_INCLUDED
-#define HEADER_app_transform_LinearPrediction_hpp_ALREADY_INCLUDED
+#ifndef HEADER_app_codec_LinearPrediction_hpp_ALREADY_INCLUDED
+#define HEADER_app_codec_LinearPrediction_hpp_ALREADY_INCLUDED
 
-#include <app/transform/Interface.hpp>
+#include <app/codec/Interface.hpp>
 #include <gubg/ml/adadelta/Minimizer.hpp>
 #include <gubg/ml/fwd/Minimizer.hpp>
 #include <gubg/mss.hpp>
@@ -9,9 +9,9 @@
 #include <numeric>
 #include <iomanip>
 
-namespace app { namespace transform { 
+namespace app { namespace codec { namespace lp { 
 
-    class LinearPrediction: public Interface
+    class Difference: public Interface
     {
     public:
         bool setup(const KeyValues &kv, Metadata &md) override
@@ -20,7 +20,7 @@ namespace app { namespace transform {
             MSS_END();
         }
 
-        bool transform(const Block &input, Block &output) override
+        bool operator()(const Block &input, Block &output) override
         {
             MSS_BEGIN(bool);
 
@@ -183,6 +183,6 @@ namespace app { namespace transform {
         std::vector<float> gradient_;
     };
 
-} } 
+} } } 
 
 #endif

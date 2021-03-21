@@ -1,0 +1,3 @@
+* Key: namespace
+* Value: read, write, encode, decode, ...
+* Use ;= iso :=

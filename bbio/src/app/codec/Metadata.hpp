@@ -1,9 +1,9 @@
-#ifndef HEADER_app_transform_Metadata_hpp_ALREADY_INCLUDED
-#define HEADER_app_transform_Metadata_hpp_ALREADY_INCLUDED
+#ifndef HEADER_app_codec_Metadata_hpp_ALREADY_INCLUDED
+#define HEADER_app_codec_Metadata_hpp_ALREADY_INCLUDED
 
 #include <optional>
 
-namespace app { namespace transform { 
+namespace app { namespace codec { 
 
     struct Metadata
     {

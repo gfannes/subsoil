@@ -2,7 +2,7 @@
 #define HEADER_app_App_hpp_ALREADY_INCLUDED
 
 #include <app/Options.hpp>
-#include <app/transform/Interface.hpp>
+#include <app/codec/Interface.hpp>
 #include <list>
 
 namespace app { 
@@ -16,10 +16,10 @@ namespace app {
 
     private:
         bool create_metadata_();
-        bool create_transforms_();
+        bool create_codecs_();
 
-        transform::Metadata metadata_;
-        std::list<transform::Interface::Ptr> transforms_;
+        codec::Metadata metadata_;
+        std::list<codec::Interface::Ptr> codecs_;
     };
 } 
 
