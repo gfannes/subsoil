@@ -16,7 +16,10 @@ namespace app {
 
     private:
         bool create_metadata_();
-        bool create_codecs_();
+
+        using Type_KeyValues = std::pair<codec::KeyValue, codec::KeyValues>;
+        bool parse_codec_tkvs_(std::list<Type_KeyValues> &);
+        bool create_codecs_(const std::list<Type_KeyValues> &);
 
         codec::Metadata metadata_;
         std::list<codec::Interface::Ptr> codecs_;

@@ -1,0 +1,27 @@
+#Read WelcomeToAuro3D.wav
+pcm=reader;fp=bbio/content/WelcomeToAuro3D.wav
+pcm=writer;fp=diff0.wav
+
+#Compute difference and output
+lp=diff
+pcm=writer;fp=diff1.wav
+
+#Compute difference and output
+lp=diff
+pcm=writer;fp=diff2.wav
+
+#Compute difference and output
+lp=diff
+pcm=writer;fp=diff3.wav
+
+#Compute difference and output
+lp=diff
+pcm=writer;fp=diff4.wav
+
+#Compute difference and output
+lp=diff
+pcm=writer;fp=diff5.wav
+
+#Compute difference and output
+lp=diff
+pcm=writer;fp=diff6.wav

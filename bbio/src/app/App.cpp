@@ -11,7 +11,11 @@ namespace app {
         MSS_BEGIN(bool, "");
 
         MSS(create_metadata_());
-        MSS(create_codecs_());
+        {
+            std::list<Type_KeyValues> tkvs_list;
+            MSS(parse_codec_tkvs_(tkvs_list));
+            MSS(create_codecs_(tkvs_list));
+        }
 
         MSS(!!metadata_.max_block_count);
         const auto block_count = std::min(*metadata_.max_block_count, options.block_count.value_or(*metadata_.max_block_count));
@@ -45,48 +49,91 @@ namespace app {
 
         MSS_END();
     }
-    bool App::create_codecs_()
+
+    //Convert options.codecs into a std::list<Type_KeyValues>, parsing response files when encountered
+    bool App::parse_codec_tkvs_(std::list<Type_KeyValues> &tkvs_list)
+    {
+        MSS_BEGIN(bool);
+
+        for (const auto &str: options.codecs)
+        {
+            auto parse = [](Type_KeyValues &type_kvs, const std::string &str){
+                MSS_BEGIN(bool);
+
+                gubg::Strange strange{str};
+
+                auto pop_kv = [&](auto &kv){
+                    MSS_BEGIN(bool);
+                    if (strange.empty())
+                        return false;
+                    gubg::Strange kv_strange;
+                    MSS(strange.pop_until(kv_strange, ';') || strange.pop_all(kv_strange));
+                    MSS(kv_strange.pop_until(kv.first, '=') || kv_strange.pop_all(kv.first));
+                    kv_strange.pop_all(kv.second);
+                    MSS_END();
+                };
+
+                MSS(pop_kv(type_kvs.first), std::cout << "Error: could not parse the codec type from \"" << str << "\"" << std::endl);
+
+                for (codec::KeyValue kv; pop_kv(kv); )
+                    type_kvs.second.push_back(kv);
+                MSS_END();
+            };
+
+            Type_KeyValues type_kvs;
+            MSS(parse(type_kvs, str));
+
+            if (type_kvs.first.first == "fp")
+            {
+                const auto &filepath = type_kvs.first.second;
+                std::ifstream fi{filepath};
+                MSS(fi.is_open(), std::cout << "Error: could not open file \"" << filepath << "\" for reading codecs" << std::endl);
+                for (std::string line; std::getline(fi, line); )
+                {
+                    if (line.empty() || line[0] == '#')
+                        continue;
+
+                    //For now, we do not support recursive response files
+                    Type_KeyValues my_type_kvs;
+                    MSS(parse(my_type_kvs, line));
+                    tkvs_list.push_back(my_type_kvs);
+                }
+            }
+            else
+                tkvs_list.push_back(type_kvs);
+        }
+
+        MSS_END();
+    }
+
+    //Create the codec instances based on the std::list<Type_KeyValues>
+    //All response files are already parsed
+    bool App::create_codecs_(const std::list<Type_KeyValues> &tkvs_list)
     {
         MSS_BEGIN(bool);
 
         codecs_.clear();
-        
-        for (const auto &str: options.codecs)
+        for (const auto &type_kvs: tkvs_list)
         {
-            gubg::Strange strange{str};
-
-            auto pop_kv = [&](auto &kv){
-                MSS_BEGIN(bool);
-                gubg::Strange kv_strange;
-                MSS(strange.pop_until(kv_strange, ';') || strange.pop_all(kv_strange));
-                MSS(kv_strange.pop_until(kv.first, '=') || kv_strange.pop_all(kv.first));
-                kv_strange.pop_all(kv.second);
-                MSS_END();
-            };
-
-            codec::KeyValue type_kv;
-            MSS(pop_kv(type_kv), std::cout << "Error: could not parse the codec type" << std::endl);
-
-            codec::KeyValues kvs;
-            for (codec::KeyValue kv; pop_kv(kv); )
-                kvs.push_back(kv);
+            const auto &type = type_kvs.first;
+            const auto &kvs = type_kvs.second;
 
             codec::Interface::Ptr ptr;
             if (false) {}
-            else if (type_kv.first == "pcm")
+            else if (type.first == "pcm")
             {
                 if (false) {}
-                else if (type_kv.second == "reader") ptr.reset(new codec::pcm::Reader{});
-                else if (type_kv.second == "writer") ptr.reset(new codec::pcm::Writer{});
-                else MSS(false, std::cout << "Error: unknown pcm operation \"" << type_kv.second << "\"" << std::endl);
+                else if (type.second == "reader") ptr.reset(new codec::pcm::Reader{});
+                else if (type.second == "writer") ptr.reset(new codec::pcm::Writer{});
+                else MSS(false, std::cout << "Error: unknown pcm operation \"" << type.second << "\"" << std::endl);
             }
-            else if (type_kv.first == "lp")
+            else if (type.first == "lp")
             {
                 if (false) {}
-                else if (type_kv.second == "diff") ptr.reset(new codec::lp::Difference{});
-                else MSS(false, std::cout << "Error: unknown lp operation \"" << type_kv.second << "\"" << std::endl);
+                else if (type.second == "diff") ptr.reset(new codec::lp::Difference{});
+                else MSS(false, std::cout << "Error: unknown lp operation \"" << type.second << "\"" << std::endl);
             }
-            else MSS(false, std::cout << "Error: unknown codec family \"" << type_kv.first << "\"" << std::endl);
+            else MSS(false, std::cout << "Error: unknown codec family \"" << type.first << "\"" << std::endl);
 
             MSS(!!ptr);
             MSS(ptr->setup(kvs, metadata_));

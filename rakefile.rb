@@ -222,6 +222,9 @@ namespace :bbio do
     desc "Test bbio"
     task :test => :build do
         app.run("-h")
-        app.run("-V", "1", "-s", "1024", "-c", "pcm=reader;fp=WelcomeToAuro3D.wav;skip=0", "-c", "lp=diff", "-c", "pcm=writer;fp=test.wav", "-c", "lp=diff", "-c", "pcm=writer;test2.wav", "-n", "-1")
+        verbose = 0
+        FileList.new("bbio/test/*.txt").each do |fp|
+            app.run("-V", "#{verbose}", "-s", "1024", "-c", "fp=#{fp}", "-n", "-1")
+        end
     end
 end
