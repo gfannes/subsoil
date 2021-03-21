@@ -1,3 +1,5 @@
+//uitsteek pin-tot-pin: 176mm
+
 $fs = 0.01;
 $fn = 100;
 
