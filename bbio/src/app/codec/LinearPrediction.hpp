@@ -14,7 +14,7 @@ namespace app { namespace codec { namespace lp {
     class Difference: public Interface
     {
     public:
-        bool setup(const KeyValues &kv, Metadata &md) override
+        bool setup(const kv::KeyValues &kvs, Metadata &md) override
         {
             MSS_BEGIN(bool);
             MSS_END();
@@ -33,29 +33,55 @@ namespace app { namespace codec { namespace lp {
                     prev_ = orig;
                 }
 
-            /* std::cout << "Input: " << model.avg_cost_diffs(input_data) << " " << model.max_cost_diffs(input_data) << std::endl; */
-
-            /* MSS(model.learn(input_data)); */
-
-            /* output_data[0] = input_data[0]; */
-            /* for (auto ix = 0u; ix < model.order(); ++ix) */
-            /* { */
-            /*     output_data[ix] = input_data[ix]; */
-            /*     output_data[ix] = 0.0; */
-            /* } */
-            /* for (auto ix = model.order(); ix < input_data.size(); ++ix) */
-            /*     output_data[ix] = input_data[ix]-model.predict(&input_data[ix-model.order()]); */
-
-            /* const auto my_avg_cost = model.avg_cost_diffs(output_data); */
-            /* total_avg_cost += my_avg_cost; */
-            /* std::cout << "Output: " << my_avg_cost << " " << model.max_cost_diffs(output_data) << std::endl; */
-
             MSS_END();
         }
 
     private:
         float prev_ = 0;
     };
+    
+    class Encoder: public Interface
+    {
+    public:
+        bool setup(const kv::KeyValues &kvs, Metadata &md) override
+        {
+            MSS_BEGIN(bool);
+
+            {
+                kv::Parser parser;
+                MSS(parser.on("order", [&](auto v){order_ = std::stoul(v); return true;}));
+                MSS(parser(kvs));
+            }
+
+            MSS_END();
+        }
+
+        bool operator()(const Block &input, Block &output) override
+        {
+            MSS_BEGIN(bool);
+            MSS_END();
+        }
+
+    private:
+        std::optional<unsigned int> order_;
+    };
+
+    /* std::cout << "Input: " << model.avg_cost_diffs(input_data) << " " << model.max_cost_diffs(input_data) << std::endl; */
+
+    /* MSS(model.learn(input_data)); */
+
+    /* output_data[0] = input_data[0]; */
+    /* for (auto ix = 0u; ix < model.order(); ++ix) */
+    /* { */
+    /*     output_data[ix] = input_data[ix]; */
+    /*     output_data[ix] = 0.0; */
+    /* } */
+    /* for (auto ix = model.order(); ix < input_data.size(); ++ix) */
+    /*     output_data[ix] = input_data[ix]-model.predict(&input_data[ix-model.order()]); */
+
+    /* const auto my_avg_cost = model.avg_cost_diffs(output_data); */
+    /* total_avg_cost += my_avg_cost; */
+    /* std::cout << "Output: " << my_avg_cost << " " << model.max_cost_diffs(output_data) << std::endl; */
 
     class Model
     {

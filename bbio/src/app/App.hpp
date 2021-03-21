@@ -6,6 +6,7 @@
 #include <list>
 
 namespace app { 
+
     class App
     {
     public:
@@ -17,13 +18,14 @@ namespace app {
     private:
         bool create_metadata_();
 
-        using Type_KeyValues = std::pair<codec::KeyValue, codec::KeyValues>;
+        using Type_KeyValues = std::pair<kv::KeyValue, kv::KeyValues>;
         bool parse_codec_tkvs_(std::list<Type_KeyValues> &);
         bool create_codecs_(const std::list<Type_KeyValues> &);
 
         codec::Metadata metadata_;
         std::list<codec::Interface::Ptr> codecs_;
     };
+
 } 
 
 #endif

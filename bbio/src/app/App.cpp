@@ -8,7 +8,7 @@ namespace app {
 
     bool App::run()
     {
-        MSS_BEGIN(bool, "");
+        MSS_BEGIN(bool);
 
         MSS(create_metadata_());
         {
@@ -68,24 +68,25 @@ namespace app {
                         return false;
                     gubg::Strange kv_strange;
                     MSS(strange.pop_until(kv_strange, ';') || strange.pop_all(kv_strange));
-                    MSS(kv_strange.pop_until(kv.first, '=') || kv_strange.pop_all(kv.first));
-                    kv_strange.pop_all(kv.second);
+                    MSS(kv_strange.pop_until(kv.key, '=') || kv_strange.pop_all(kv.key));
+                    kv_strange.pop_all(kv.value);
                     MSS_END();
                 };
 
                 MSS(pop_kv(type_kvs.first), std::cout << "Error: could not parse the codec type from \"" << str << "\"" << std::endl);
 
-                for (codec::KeyValue kv; pop_kv(kv); )
+                for (kv::KeyValue kv; pop_kv(kv); )
                     type_kvs.second.push_back(kv);
+
                 MSS_END();
             };
 
             Type_KeyValues type_kvs;
             MSS(parse(type_kvs, str));
 
-            if (type_kvs.first.first == "fp")
+            if (type_kvs.first.key == "fp")
             {
-                const auto &filepath = type_kvs.first.second;
+                const auto &filepath = type_kvs.first.value;
                 std::ifstream fi{filepath};
                 MSS(fi.is_open(), std::cout << "Error: could not open file \"" << filepath << "\" for reading codecs" << std::endl);
                 for (std::string line; std::getline(fi, line); )
@@ -120,20 +121,21 @@ namespace app {
 
             codec::Interface::Ptr ptr;
             if (false) {}
-            else if (type.first == "pcm")
+            else if (type.key == "pcm")
             {
                 if (false) {}
-                else if (type.second == "reader") ptr.reset(new codec::pcm::Reader{});
-                else if (type.second == "writer") ptr.reset(new codec::pcm::Writer{});
-                else MSS(false, std::cout << "Error: unknown pcm operation \"" << type.second << "\"" << std::endl);
+                else if (type.value == "reader") ptr.reset(new codec::pcm::Reader{});
+                else if (type.value == "writer") ptr.reset(new codec::pcm::Writer{});
+                else MSS(false, std::cout << "Error: unknown pcm operation \"" << type.value << "\"" << std::endl);
             }
-            else if (type.first == "lp")
+            else if (type.key == "lp")
             {
                 if (false) {}
-                else if (type.second == "diff") ptr.reset(new codec::lp::Difference{});
-                else MSS(false, std::cout << "Error: unknown lp operation \"" << type.second << "\"" << std::endl);
+                else if (type.value == "diff") ptr.reset(new codec::lp::Difference{});
+                else if (type.value == "encode") ptr.reset(new codec::lp::Encoder{});
+                else MSS(false, std::cout << "Error: unknown lp operation \"" << type.value << "\"" << std::endl);
             }
-            else MSS(false, std::cout << "Error: unknown codec family \"" << type.first << "\"" << std::endl);
+            else MSS(false, std::cout << "Error: unknown codec family \"" << type << "\"" << std::endl);
 
             MSS(!!ptr);
             MSS(ptr->setup(kvs, metadata_));

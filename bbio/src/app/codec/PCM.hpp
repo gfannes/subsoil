@@ -2,6 +2,7 @@
 #define HEADER_app_codec_WavIO_hpp_ALREADY_INCLUDED
 
 #include <app/codec/Interface.hpp>
+#include <app/kv/Parser.hpp>
 #include <gubg/wav/Reader.hpp>
 #include <gubg/wav/Writer.hpp>
 #include <gubg/mss.hpp>
@@ -11,19 +12,17 @@ namespace app { namespace codec { namespace pcm {
     class Reader: public Interface
     {
     public:
-        bool setup(const KeyValues &kvs, Metadata &md) override
+        bool setup(const kv::KeyValues &kvs, Metadata &md) override
         {
             MSS_BEGIN(bool);
 
             std::optional<std::string> filepath;
-            for (const auto &kv: kvs)
             {
-                if (false) {}
-                else if (kv.first == "fp") filepath = kv.second;
-                else if (kv.first == "skip") block_index_ = std::stoul(kv.second);
-                else if (kv.second.empty())
-                    filepath = kv.first;
-                else MSS(false, std::cout << "Error: could not interpret KV " << kv.first << " " << kv.second << std::endl);
+                kv::Parser parser;
+                MSS(parser.on("fp", [&](auto v){filepath = v; return true;}));
+                MSS(parser.on("skip", [&](auto v){block_index_ = std::stoul(v); return true;}));
+                MSS(parser.on_other([&](auto k, auto v){ MSS_BEGIN(bool); MSS(v.empty()); filepath = k; MSS_END(); }));
+                MSS(parser(kvs));
             }
 
             MSS(!!filepath);
@@ -60,19 +59,19 @@ namespace app { namespace codec { namespace pcm {
     class Writer: public Interface
     {
     public:
-        bool setup(const KeyValues &kvs, Metadata &md) override
+        bool setup(const kv::KeyValues &kvs, Metadata &md) override
         {
             MSS_BEGIN(bool);
 
             std::optional<std::string> filepath;
-            for (const auto &kv: kvs)
             {
-                if (false) {}
-                else if (kv.first == "fp") filepath = kv.second;
-                else filepath = kv.first;
+                kv::Parser parser;
+                MSS(parser.on("fp", [&](auto v){filepath = v; return true;}));
+                MSS(parser.on_other([&](auto k, auto v){ MSS_BEGIN(bool); MSS(v.empty()); filepath = k; MSS_END(); }));
+                MSS(parser(kvs));
             }
-
             MSS(!!filepath);
+
             MSS(writer_.open(*filepath, md.block_size, 1, md.sample_rate, md.bits_per_sample));
 
             MSS_END();

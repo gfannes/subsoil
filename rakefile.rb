@@ -220,10 +220,12 @@ namespace :bbio do
         app = cooker().option(mode).generate(:ninja, "bbio/app").ninja()
     end
     desc "Test bbio"
-    task :test => :build do
+    task :test, [:filter] => :build do |t,args|
+        filter = args[:filter]||""
+
         app.run("-h")
         verbose = 0
-        FileList.new("bbio/test/*.txt").each do |fp|
+        FileList.new("bbio/test/#{filter}*.txt").each do |fp|
             app.run("-V", "#{verbose}", "-s", "1024", "-c", "fp=#{fp}", "-n", "-1")
         end
     end

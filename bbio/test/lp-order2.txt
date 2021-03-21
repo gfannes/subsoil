@@ -1,0 +1,4 @@
+#Read WelcomeToAuro3D.wav and skip the first 19 blocks
+pcm=reader;fp=bbio/content/WelcomeToAuro3D.wav;skip=19
+
+lp=encode;order=2

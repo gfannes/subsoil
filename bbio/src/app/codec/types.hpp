@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <list>
-#include <utility>
 #include <string>
 
 namespace app { namespace codec { 
@@ -11,8 +10,6 @@ namespace app { namespace codec {
     using Vector = std::vector<float>;
     using Block = std::vector<Vector>;
 
-    using KeyValue = std::pair<std::string, std::string>;
-    using KeyValues = std::list<KeyValue>;
 
 } } 
 
