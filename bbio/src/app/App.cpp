@@ -1,6 +1,9 @@
 #include <app/App.hpp>
 #include <app/codec/PCM.hpp>
-#include <app/codec/LinearPrediction.hpp>
+#include <app/codec/lp/Difference.hpp>
+#include <app/codec/lp/Encoder.hpp>
+#include <app/codec/lp/Decoder.hpp>
+#include <app/codec/lp/Writer.hpp>
 #include <gubg/Strange.hpp>
 #include <gubg/mss.hpp>
 
@@ -133,6 +136,8 @@ namespace app {
                 if (false) {}
                 else if (type.value == "diff") ptr.reset(new codec::lp::Difference{});
                 else if (type.value == "encode") ptr.reset(new codec::lp::Encoder{});
+                else if (type.value == "decode") ptr.reset(new codec::lp::Decoder{});
+                else if (type.value == "write") ptr.reset(new codec::lp::Writer{});
                 else MSS(false, std::cout << "Error: unknown lp operation \"" << type.value << "\"" << std::endl);
             }
             else MSS(false, std::cout << "Error: unknown codec family \"" << type << "\"" << std::endl);

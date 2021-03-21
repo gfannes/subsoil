@@ -1,103 +1,144 @@
-#ifndef HEADER_app_codec_LinearPrediction_hpp_ALREADY_INCLUDED
-#define HEADER_app_codec_LinearPrediction_hpp_ALREADY_INCLUDED
+#ifndef HEADER_app_codec_lp_Model_hpp_ALREADY_INCLUDED
+#define HEADER_app_codec_lp_Model_hpp_ALREADY_INCLUDED
 
-#include <app/codec/Interface.hpp>
 #include <gubg/ml/adadelta/Minimizer.hpp>
 #include <gubg/ml/fwd/Minimizer.hpp>
-#include <gubg/mss.hpp>
+#include <gubg/Range_macro.hpp>
 #include <cmath>
 #include <numeric>
+#include <vector>
 #include <iomanip>
 
 namespace app { namespace codec { namespace lp { 
 
-    class Difference: public Interface
+    class Model
     {
     public:
-        bool setup(const kv::KeyValues &kvs, Metadata &md) override
+        using Vector = std::vector<float>;
+
+        Vector coefficients;
+
+        Model() {}
+        Model(unsigned int order): coefficients(order, 1.0/order) {}
+        Model(const Vector &coeffs): coefficients(RANGE(coeffs)) {}
+
+        unsigned int order() const {return coefficients.size();}
+
+        template <typename It>
+        float predict(It sample_it) const
         {
-            MSS_BEGIN(bool);
-            MSS_END();
+            float sum = 0.0;
+            for (auto ix = 0u; ix < coefficients.size(); ++ix)
+                sum += coefficients[ix]*sample_it[ix];
+            return sum;
         }
 
-        bool operator()(const Block &input, Block &output) override
+        template <typename Errors>
+        bool prediction_errors(Errors &errors, const Vector &signal) const
         {
             MSS_BEGIN(bool);
 
-            output = input;
-            for (auto &vec: output)
-                for (auto &val: vec)
-                {
-                    const auto orig = val;
-                    val = orig-prev_;
-                    prev_ = orig;
-                }
+            auto input = signal.begin();
+            auto actual = input+order();
 
-            MSS_END();
-        }
+            errors.resize(signal.size()-order());
 
-    private:
-        float prev_ = 0;
-    };
-    
-    class Encoder: public Interface
-    {
-    public:
-        bool setup(const kv::KeyValues &kvs, Metadata &md) override
-        {
-            MSS_BEGIN(bool);
-
+            for (auto error = errors.begin(); error != errors.end(); ++input, ++actual, ++error)
             {
-                kv::Parser parser;
-                MSS(parser.on("order", [&](auto v){order_ = std::stoul(v); return true;}));
-                MSS(parser(kvs));
+                const auto prediction = predict(input);
+                *error = *actual - prediction;
             }
 
             MSS_END();
         }
 
-        bool operator()(const Block &input, Block &output) override
+        bool learn(const Vector &signal)
         {
             MSS_BEGIN(bool);
+
+            gradient_.resize(coefficients.size());
+
+            gubg::ml::fwd::Minimizer<double> fwd_minimizer;
+            auto nr_iter = 1000000;
+            nr_iter = 1000;
+            /* nr_iter = 0; */
+            for (auto ix = 0u; ix < nr_iter; ++ix)
+            {
+                auto my_compute_gradient = [&](auto &gradient){
+                    return compute_gradient_(gradient, signal);
+                };
+                MSS(fwd_minimizer.update(coefficients, my_compute_gradient));
+
+                for (auto &c: coefficients)
+                    std::cout << std::setw(10) << c << "\t";
+                std::cout << std::endl;
+            }
+
             MSS_END();
         }
 
     private:
-        std::optional<unsigned int> order_;
+        template <typename Gradient>
+        bool compute_gradient_(Gradient &gradient, const Vector &signal)
+        {
+            MSS_BEGIN(bool);
+
+            MSS(signal.size() > order());
+
+            std::fill(RANGE(gradient), 0.0);
+
+            auto input = signal.begin();
+            auto actual = input+order();
+            auto actual_end = signal.end();
+            for (; actual != actual_end; ++input, ++actual)
+            {
+                const auto diff = predict(input) - *actual;
+
+#if 0
+                const auto prefix = (diff >= 0 ? 1.0 : -1.0)/(std::abs(diff)+1);
+                L(C(diff)C(prefix));
+                /* const auto prefix = (diff >= 0 ? 1.0 : -1.0); */
+                /* const auto prefix = diff; */
+#else
+                const auto prefix = 2.0*diff;
+#endif
+
+                for (auto ix = 0u; ix < gradient.size(); ++ix)
+                    gradient[ix] += prefix*input[ix];
+            }
+
+            const auto factor = 1.0/(signal.size()-order());
+            for (auto &g: gradient)
+                g *= factor;
+
+            MSS_END();
+        }
+
+        Vector gradient_;
     };
 
-    /* std::cout << "Input: " << model.avg_cost_diffs(input_data) << " " << model.max_cost_diffs(input_data) << std::endl; */
+#if 0
+    std::cout << "Input: " << model.avg_cost_diffs(input_data) << " " << model.max_cost_diffs(input_data) << std::endl;
 
-    /* MSS(model.learn(input_data)); */
+    MSS(model.learn(input_data));
 
-    /* output_data[0] = input_data[0]; */
-    /* for (auto ix = 0u; ix < model.order(); ++ix) */
-    /* { */
-    /*     output_data[ix] = input_data[ix]; */
-    /*     output_data[ix] = 0.0; */
-    /* } */
-    /* for (auto ix = model.order(); ix < input_data.size(); ++ix) */
-    /*     output_data[ix] = input_data[ix]-model.predict(&input_data[ix-model.order()]); */
+    output_data[0] = input_data[0];
+    for (auto ix = 0u; ix < model.order(); ++ix)
+    {
+        output_data[ix] = input_data[ix];
+        output_data[ix] = 0.0;
+    }
+    for (auto ix = model.order(); ix < input_data.size(); ++ix)
+        output_data[ix] = input_data[ix]-model.predict(&input_data[ix-model.order()]);
 
-    /* const auto my_avg_cost = model.avg_cost_diffs(output_data); */
-    /* total_avg_cost += my_avg_cost; */
-    /* std::cout << "Output: " << my_avg_cost << " " << model.max_cost_diffs(output_data) << std::endl; */
+    const auto my_avg_cost = model.avg_cost_diffs(output_data);
+    total_avg_cost += my_avg_cost;
+    std::cout << "Output: " << my_avg_cost << " " << model.max_cost_diffs(output_data) << std::endl;
 
     class Model
     {
     public:
-        Model(unsigned int order): coefficients_(order, 1.0/order), gradient_(order) {}
 
-        unsigned int order() const {return coefficients_.size();}
-
-        template <typename T>
-        double predict(const T *ptr) const
-        {
-            double sum = 0.0;
-            for (auto ix = 0u; ix < coefficients_.size(); ++ix)
-                sum += coefficients_[ix]*ptr[ix];
-            return sum;
-        }
 
         double cost_diff(double diff) const
         {
@@ -204,10 +245,8 @@ namespace app { namespace codec { namespace lp {
 
             MSS_END();
         }
-
-        std::vector<float> coefficients_;
-        std::vector<float> gradient_;
     };
+#endif
 
 } } } 
 

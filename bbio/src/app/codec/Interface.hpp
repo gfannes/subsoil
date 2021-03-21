@@ -16,6 +16,7 @@ namespace app { namespace codec {
         virtual ~Interface() {}
 
         virtual bool setup(const kv::KeyValues &, Metadata &) = 0;
+
         virtual bool operator()(const Block &input, Block &output) = 0;
     };
 
