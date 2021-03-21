@@ -30,7 +30,7 @@ namespace app { namespace codec { namespace lp {
 
         bool operator()(const Block &input_block, Block &output_block) override
         {
-            MSS_BEGIN(bool);
+            MSS_BEGIN(bool, "");
 
             MSS(input_block.size() == 1);
             const auto &input_vec = input_block[0];

@@ -216,7 +216,7 @@ namespace :bbio do
     desc "Build bbio"
     task :build do
         mode = :release
-        mode = :debug
+        # mode = :debug
         app = cooker().option(mode).generate(:ninja, "bbio/app").ninja()
     end
     desc "Test bbio"

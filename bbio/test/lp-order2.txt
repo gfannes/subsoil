@@ -1,9 +1,10 @@
 #Read WelcomeToAuro3D.wav and skip the first 19 blocks
-pcm=reader;fp=bbio/content/WelcomeToAuro3D.wav;begin=19;end=20
+pcm=reader;fp=bbio/content/WelcomeToAuro3D.wav
+#;begin=19;end=20
 pcm=writer;fp=lp.input.wav
 
-lp=encode;order=10
+lp=encode;order=2
 lp=write
-lp=decode
+lp=decode;
 
 pcm=writer;fp=lp.output.wav

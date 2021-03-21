@@ -13,6 +13,13 @@ namespace app { namespace codec { namespace lp {
         bool setup(const kv::KeyValues &kvs, Metadata &md) override
         {
             MSS_BEGIN(bool);
+            
+            {
+                kv::Parser parser;
+                MSS(parser.on("false", [&](auto v){do_decode_ = false; return true;}));
+                MSS(parser(kvs));
+            }
+
             MSS_END();
         }
 
@@ -25,26 +32,39 @@ namespace app { namespace codec { namespace lp {
             const auto &seeds = input_block[1];
             const auto &errors = input_block[2];
 
-            model_.coefficients = coeffs;
-
             output_block.resize(1);
             output_block[0].resize(seeds.size()+errors.size());
             auto output = output_block[0].begin();
-            auto input = output;
-            auto error = errors.begin();
             auto output_end = output_block[0].end();
+            auto error = errors.begin();
 
-            for (auto ix = 0u; ix < model_.order() && output != output_end; ++ix, ++output)
-                *output = seeds[ix];
+            if (do_decode_)
+            {
+                model_.coefficients = coeffs;
 
-            for (; output != output_end; ++output, ++input, ++error)
-                *output = model_.predict(input) + *error;
+                auto input = output;
+
+                for (auto ix = 0u; ix < model_.order() && output != output_end; ++ix, ++output)
+                    *output = seeds[ix];
+
+                for (; output != output_end; ++output, ++input, ++error)
+                    *output = model_.predict(input) + *error;
+            }
+            else
+            {
+                for (auto ix = 0u; ix < model_.order() && output != output_end; ++ix, ++output)
+                    *output = 0;//seeds[ix];
+
+                for (; output != output_end; ++output, ++error)
+                    *output = *error;
+            }
 
             MSS_END();
         }
 
     private:
         Model model_;
+        bool do_decode_ = true;
     };
 
 } } } 
