@@ -38,12 +38,12 @@ namespace app { namespace kv {
                 auto it = key__ftor_.find(kv.key);
                 if (it != key__ftor_.end())
                 {
-                    MSS(it->second(kv.value),   std::cout << "Error: could not handle value for " << kv << std::endl);
+                    MSS(it->second(kv.value), std::cout << "Error: could not handle value for " << kv << std::endl);
                 }
                 else
                 {
                     MSS(!!other_, std::cout << "Error: no handler found for " << kv << std::endl);
-                    MSS(other_(kv.key, kv.value));
+                    MSS(other_(kv.key, kv.value), std::cout << "Error: could not handle " << kv << std::endl);
                 }
             }
 

@@ -2,6 +2,7 @@
 #define HEADER_app_codec_lp_Writer_hpp_ALREADY_INCLUDED
 
 #include <app/codec/Interface.hpp>
+#include <gubg/bit/oor/Codec.hpp>
 #include <gubg/Range_macro.hpp>
 #include <gubg/hr.hpp>
 #include <gubg/mss.hpp>

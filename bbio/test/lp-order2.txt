@@ -3,8 +3,8 @@ pcm=reader;fp=bbio/content/WelcomeToAuro3D.wav
 #;begin=19;end=20
 pcm=writer;fp=lp.input.wav
 
-lp=encode;order=2
+lp=encode;order=5
 lp=write
-lp=decode;
+lp=decode;false
 
 pcm=writer;fp=lp.output.wav
