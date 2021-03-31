@@ -3,6 +3,7 @@
 
 #include <app/codec/Interface.hpp>
 #include <gubg/bit/oor/Codec.hpp>
+#include <gubg/bit/Writer.hpp>
 #include <gubg/Range_macro.hpp>
 #include <gubg/hr.hpp>
 #include <gubg/mss.hpp>
@@ -29,7 +30,23 @@ namespace app { namespace codec { namespace lp {
         bool setup(const kv::KeyValues &kvs, Metadata &md) override
         {
             MSS_BEGIN(bool);
+
             block_size_ = md.block_size;
+
+            std::optional<std::string> filepath;
+            {
+                kv::Parser parser;
+                MSS(parser.on("fp", [&](auto v){filepath = v; return true;}));
+                MSS(parser.on_other([&](auto k, auto v){ MSS_BEGIN(bool); MSS(v.empty()); filepath = k; MSS_END(); }));
+                MSS(parser(kvs));
+            }
+
+            if (filepath)
+            {
+                fo_.open(*filepath, std::ios::binary);
+                MSS(fo_.is_open());
+            }
+
             MSS_END();
         }
 
@@ -43,6 +60,27 @@ namespace app { namespace codec { namespace lp {
             const auto &coeffs = input_block[0];
             const auto &seeds = input_block[1];
             const auto &errors = input_block[2];
+
+            bit_writer_.clear();
+            bit_writer_.uint(coeffs.size(), 5);
+            bit_writer_.uint(seeds.size(), 5);
+            {
+                const auto size = errors.size();
+                errors_i_.resize(size);
+                for (auto ix = 0u; ix < size; ++ix)
+                    errors_i_[ix] = (1<<15)*errors[ix];
+                std::cout << errors[0] << std::endl;
+                gubg::bit::oor::Metadata md;
+                gubg::bit::oor::Codec<int> cdc;
+                cdc.find_optimal_metadata(md, errors_i_.data(), errors_i_.size());
+                std::cout << "max_bw: " << md.max_bw << " min_bw: " << md.min_bw << std::endl;
+                bit_writer_.uint(size, 12);
+                bit_writer_.uint(md.max_bw, 5);
+                bit_writer_.uint(md.min_bw, 5);
+                cdc.encode(bit_writer_, md, errors_i_.data(), errors_i_.size());
+            }
+            bit_writer_.to_bytes(bytes_);
+            fo_.write((const char *)bytes_.data(), bytes_.size());
 
             auto mm_coeffs = std::minmax_element(RANGE(coeffs));
             auto mm_errors = std::minmax_element(RANGE(errors));
@@ -63,6 +101,10 @@ namespace app { namespace codec { namespace lp {
         std::list<float> costs_;
         unsigned int block_size_ = 0;
         unsigned int sample_count_ = 0;
+        gubg::bit::Writer bit_writer_;
+        std::vector<int> errors_i_;
+        std::vector<std::uint8_t> bytes_;
+        std::ofstream fo_;
     };
 
 } } } 

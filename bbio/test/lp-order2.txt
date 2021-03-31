@@ -4,7 +4,7 @@ pcm=reader;fp=bbio/content/WelcomeToAuro3D.wav
 pcm=writer;fp=lp.input.wav
 
 lp=encode;order=5
-lp=write
+lp=write;fp=lp.output.bin
 lp=decode;false
 
 pcm=writer;fp=lp.output.wav
