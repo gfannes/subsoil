@@ -68,7 +68,7 @@ namespace app { namespace codec { namespace lp {
                 const auto size = errors.size();
                 errors_i_.resize(size);
                 for (auto ix = 0u; ix < size; ++ix)
-                    errors_i_[ix] = (1<<15)*errors[ix];
+                    errors_i_[ix] = errors[ix];
                 std::cout << errors[0] << std::endl;
                 gubg::bit::oor::Metadata md;
                 gubg::bit::oor::Codec<int> cdc;
