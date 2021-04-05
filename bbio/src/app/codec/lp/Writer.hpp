@@ -3,6 +3,7 @@
 
 #include <app/codec/Interface.hpp>
 #include <gubg/bit/oor/Codec.hpp>
+#include <gubg/bit/gr/Sequence.hpp>
 #include <gubg/bit/Writer.hpp>
 #include <gubg/Range_macro.hpp>
 #include <gubg/hr.hpp>
@@ -70,6 +71,7 @@ namespace app { namespace codec { namespace lp {
                 for (auto ix = 0u; ix < size; ++ix)
                     errors_i_[ix] = errors[ix];
                 std::cout << errors[0] << std::endl;
+#if 0
                 gubg::bit::oor::Metadata md;
                 gubg::bit::oor::Codec<int> cdc;
                 cdc.find_optimal_metadata(md, errors_i_.data(), errors_i_.size());
@@ -78,6 +80,11 @@ namespace app { namespace codec { namespace lp {
                 bit_writer_.uint(md.max_bw, 5);
                 bit_writer_.uint(md.min_bw, 5);
                 cdc.encode(bit_writer_, md, errors_i_.data(), errors_i_.size());
+#else
+                gubg::bit::gr::Sequence<gubg::bit::gr::Type::Normal> cdc;
+                cdc.encode(bit_writer_, size);
+                cdc.encode(bit_writer_, errors_i_.data(), errors_i_.size());
+#endif
             }
             bit_writer_.to_bytes(bytes_);
             fo_.write((const char *)bytes_.data(), bytes_.size());
