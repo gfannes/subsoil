@@ -67,6 +67,7 @@ namespace app { namespace codec { namespace lp {
             bit_writer_.uint(seeds.size(), 5);
             {
                 const auto size = errors.size();
+                bit_writer_.uint(size, 12);
                 errors_i_.resize(size);
                 for (auto ix = 0u; ix < size; ++ix)
                     errors_i_[ix] = errors[ix];
@@ -76,13 +77,12 @@ namespace app { namespace codec { namespace lp {
                 gubg::bit::oor::Codec<int> cdc;
                 cdc.find_optimal_metadata(md, errors_i_.data(), errors_i_.size());
                 std::cout << "max_bw: " << md.max_bw << " min_bw: " << md.min_bw << std::endl;
-                bit_writer_.uint(size, 12);
                 bit_writer_.uint(md.max_bw, 5);
                 bit_writer_.uint(md.min_bw, 5);
                 cdc.encode(bit_writer_, md, errors_i_.data(), errors_i_.size());
 #else
                 gubg::bit::gr::Sequence<gubg::bit::gr::Type::Normal> cdc;
-                cdc.encode(bit_writer_, size);
+                cdc.reset(10);
                 cdc.encode(bit_writer_, errors_i_.data(), errors_i_.size());
 #endif
             }
