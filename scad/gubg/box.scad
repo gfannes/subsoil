@@ -15,7 +15,7 @@ module gubg_box(x,y,z,t,bt,clearance)
         translate(coord3(0,(t+clearance)/2,0))
         rotate(90, [1,0,0])
         linear_extrude(t+clearance)
-        polygon([[0,-$fs], [3*t,-$fs], [2*t,t+2*$fs], [0,t+$fs]]);
+        polygon([[0,-$fs], [3*t+clearance,-$fs], [2*t+clearance,t+2*$fs], [0,t+$fs]]);
     }
 
     intersection()
@@ -41,32 +41,27 @@ module gubg_box(x,y,z,t,bt,clearance)
                     translate(coord3(x,yy,-$fs))
                     cylinder(t+2*$fs,r,r);
                 }
-                hull()
-                {
-                    translate(coord3(xxx-d/2-r,yy,-$fs))
-                    cylinder(t+2*$fs,r,r);
-                    translate(coord3(xx,yy,-$fs))
-                    cylinder(t+2*$fs,r,r);
-                }
-                hull()
-                {
-                    translate(coord3(xx,yy,-$fs))
-                    cylinder(t+2*$fs,r,r);
-                    translate(coord3(xx,y,-$fs))
-                    cylinder(t+2*$fs,r,r);
-                }
 
-                translate(coord3(x-(t+clearance)/2+$fs,y-d+clearance,0))
-                hook(d,clearance);
+                translate(coord3(x-(t+clearance)/2+$fs,y-d-clearance,0))
+                hook(d,1*clearance);
             }
 
             difference()
             {
                 union()
                 {
+                    //Wall
                     translate(coord3(0,0,t))
                     linear_extrude(z-2*t)
-                    polygon([coord2(0,0), coord2(x-2.5*t,0), coord2(x-2.5*t,t), coord2(t,t), coord2(t,y-ro), coord2(0,y-ro)]);
+                    union()
+                    {
+                        polygon([coord2(0,0), coord2(x-2.5*t,0), coord2(x-2.5*t,t), coord2(t,t), coord2(t,y-ro), coord2(0,y-ro)]);
+
+                        if (false)
+                            //Opposite wall
+                            polygon([coord2(x,y), coord2(t,y), coord2(t,y-t), coord2(x-t,y-t), coord2(x-t,t), coord2(x,t)]);
+
+                    }
 
                     //Lock
                     translate(coord3(ro,y-ro,t))
@@ -78,7 +73,7 @@ module gubg_box(x,y,z,t,bt,clearance)
                     rotate(key_angle, [0,0,1])
                     gubg_key(z-2*t,ri-clearance,sqrt(2)*2*t);
 
-                    translate(coord3(t/2,d,z+$fs))
+                    translate(coord3(t/2,d+clearance/2,z+$fs))
                     rotate(180, [0,0,1])
                     rotate(180, [0,1,0])
                     hook(d,0);
@@ -110,7 +105,9 @@ t = 1.5;
 b = 50;
 d = 30;
 h = 40;
+//0.2 is very tight on CR10S-Pro
 translate([2,0,0])
     gubg_box(b,d,h,t,1,0.2);
+//0.3 is very tight on CR10S-Pro
 translate([-2,0,0])
     gubg_box(b,d,h,t,-1,0.3);
