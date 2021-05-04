@@ -1,3 +1,21 @@
+//TODO:
+//* Move USB port down
+//* Merge USB port with Arduino mock
+//* Create 2-layer slider
+//* Swap SCD30
+//* Add cylinders for grove
+//* Add grove connectors to mock
+//* Add some set-back to block to allow insertion of OLED
+//* Rework case lock: t as width and on both sides
+//* Make case lock optional
+//* Print without support or rework block to make it printable without support
+//* Add Arduino support cylinders to mock
+//* Move usable space of case to (0,0)
+//* Add headers and optional wires to Arduino mock
+//* Remove small dots on cylinders for grove
+//* Add stop and block to Arduino and grove mocks
+//* Increase stops in z
+
 $fn = 100;
 $fs = 0.01;
 
@@ -14,7 +32,7 @@ h = 30;
 clearance = 0.4;
 
 /* if (false) */
-translate([t,0,0])
+    translate([t,0,0])
 union()
 {
     difference()
@@ -50,13 +68,13 @@ union()
             gubg_block(4*t,12,t+gubg_arduino_uno_size[2], 2, 0.2);
             color([0,1,1])
             if (false)
-            translate([-2,0,t+gubg_arduino_uno_size[2]])
-            gubg_slider(4*t,12,2);
+                translate([-2,0,t+gubg_arduino_uno_size[2]])
+                gubg_slider(4*t,12,2);
         }
 
-    if (false)
-        translate([0,0,t])
-        gubg_arduino_uno_mock([1,0,0]);
+        if (false)
+            translate([0,0,t])
+            gubg_arduino_uno_mock([1,0,0]);
     }
 
     translate([0,-10,0])
@@ -64,7 +82,7 @@ union()
 }
 
 /* if (false) */
-translate([-b-t,0,0])
+    translate([-b-t,0,0])
 union()
 {
     difference()
