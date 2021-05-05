@@ -2,6 +2,10 @@ module mob(d,h,t,cl)
 {
     tt = 0.5*t+cl;
 
+    //Upside-down for better printing
+    translate([0,0,h])
+    rotate(180, [1,0,0])
+
     translate([t,0,0])
     difference()
     {
