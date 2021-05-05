@@ -3,6 +3,7 @@ $fs = 0.01;
 
 use <gubg/box.scad>
 use <gubg/stop.scad>
+use <gubg/buzzer.scad>
 include <gubg/grove.scad>
 include <gubg/arduino.scad>
 
@@ -66,8 +67,9 @@ union()
     translate([-w-t,0,0])
 union()
 {
-    scd30_pos = [w-60-3*t-3*t,0,0];
-    oled_pos  = [w-40-3*t-3*t,d-20-3*t-3*t,0];
+    scd30_pos  = [w-60-3*t-3*t,0,0];
+    oled_pos   = [w-40-3*t-3*t,d-20-3*t-3*t,0];
+    buzzer_pos = [5,oled_pos[1]+10,0];
 
     translate([0,0,t])
     {
@@ -90,6 +92,13 @@ union()
                 gubg_grove_oled_mock(0.5*cl);
             }
 
+            //Buzzer
+            {
+                color([0,0,1])
+                translate(buzzer_pos)
+                gubg_buzzer_mock(cl);
+            }
+
             vent_holes();
         }
 
@@ -98,6 +107,10 @@ union()
 
         translate(scd30_pos)
         gubg_grove_scd30_mount(0, cl);
+
+        translate(buzzer_pos)
+        translate([0,0,-t])
+        gubg_buzzer_mount(t,cl);
     }
 
     translate([0,-20,0])
@@ -105,5 +118,8 @@ union()
 
     translate([20,-20,0])
     gubg_grove_scd30_slider(cl);
+
+    translate([40,-20,0])
+    gubg_buzzer_slider(t,cl);
 }
 
