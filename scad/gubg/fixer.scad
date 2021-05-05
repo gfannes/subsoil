@@ -5,20 +5,19 @@ module mob(d,h,t,cl)
     translate([t,0,0])
     difference()
     {
+        translate([t,0,0])
         union()
         {
-            translate([t,0,0])
             for (f=[-1,1])
             {
                 translate([0,f*d/2,0])
-                {
-                    cylinder(h,(t+cl)/2,(t+cl)/2);
-                    translate([-4*t,-tt/2,0])
-                    cube([4*t,tt,h]);
-                }
+                cylinder(h,(t+cl)/2,(t+cl)/2);
             }
-            translate([-3*t,-d/2,0])
-            cube([t,d,h]);
+            translate([-tt/2,-d/2,0])
+            cube([tt,d,h]);
+
+            translate([-4*t,-t/2,0])
+            cube([4*t,t,h]);
         }
 
         dd = d+2*t+2*$fs;
@@ -46,6 +45,13 @@ module fix(d,h,t, cl)
 
 $fn = 100;
 $fs = 0.01;
-fix(10,10,2, 0.3);
-translate([15,0,0])
-mob(10,10,2, 0.0);
+
+d = 10;
+h = 10;
+t = 2;
+cl = 0.3;
+
+fix(d,h,t,cl);
+    /* translate([15,0,0]) */
+translate([cl,0,0])
+    mob(d,h,t, 0);
