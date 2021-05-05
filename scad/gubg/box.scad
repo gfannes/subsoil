@@ -1,6 +1,6 @@
 use <key.scad>
 
-module gubg_box(x,y,z,t,bt,clearance)
+module gubg_box(x,y,z,t,bt,cl)
 {
     ro = 1.5*t;
     ri = t;
@@ -8,43 +8,17 @@ module gubg_box(x,y,z,t,bt,clearance)
     function coord2(x,y) = [bt*x,y];
     function coord3(x,y,z) = [bt*x,y,z];
 
-    module hook(d,clearance)
-    {
-        translate([0,-2*t,0])
-        rotate(90, [0,0,1])
-        translate(coord3(0,(t+clearance)/2,0))
-        rotate(90, [1,0,0])
-        linear_extrude(t+clearance)
-        polygon([[0,-$fs], [3*t+clearance,-$fs], [2*t+clearance,t+2*$fs], [0,t+$fs]]);
-    }
-
     intersection()
     {
         union()
         {
             r = 0.3*t;
             d = 1.75*t;
-            difference()
-            {
-                //Base plate
-                linear_extrude(t)
-                polygon([coord2(0,0), coord2(x,0), coord2(x,y), coord2(0,y)]);
+            small_lock_h = 3*t;
 
-                //Lever
-                yy = y-d-r;
-                xx = 0.4*x;
-                xxx = 0.7*x;
-                hull()
-                {
-                    translate(coord3(xxx+d/2+r,yy,-$fs))
-                    cylinder(t+2*$fs,r,r);
-                    translate(coord3(x,yy,-$fs))
-                    cylinder(t+2*$fs,r,r);
-                }
-
-                translate(coord3(x-(t+clearance)/2+$fs,y-d-clearance,0))
-                hook(d,1*clearance);
-            }
+            //Base plate
+            linear_extrude(t)
+            polygon([coord2(0,0), coord2(x,0), coord2(x,y), coord2(0,y)]);
 
             difference()
             {
@@ -71,21 +45,36 @@ module gubg_box(x,y,z,t,bt,clearance)
                     key_angle =-45*bt-90;
                     translate(coord3(x-ro,ro,t))
                     rotate(key_angle, [0,0,1])
-                    gubg_key(z-2*t,ri-clearance,sqrt(2)*2*t);
+                    gubg_key(z-2*t,ri-cl,sqrt(2)*2*t);
 
-                    translate(coord3(t/2,d+clearance/2,z+$fs))
-                    rotate(180, [0,0,1])
-                    rotate(180, [0,1,0])
-                    hook(d,0);
+                    //Small lock
+                    translate(coord3(ro,ro,z-small_lock_h-cl-t))
+                    cylinder(small_lock_h+cl,ro,ro);
+
+                    //Small key
+                    translate(coord3(x-ro,y-ro,0))
+                    {
+                        small_key_angle = 90+bt*90;
+                        rotate(small_key_angle,[0,0,1])
+                        gubg_key(small_lock_h,ri-cl,small_lock_h);
+
+                        if (false)
+                            cylinder(5,ro,ro);
+                    }
                 }
 
-                translate(coord3(3*t,y-t/2-clearance,t+z/2))
-                cube([t,t+clearance,z],true);
+                translate(coord3(3*t,y-t/2-cl,t+z/2))
+                cube([t,t+cl,z],true);
 
                 lock_angle = -45*bt+90;
                 translate(coord3(ro,y-ro,t))
                 rotate(lock_angle, [0,0,1])
                 gubg_key(z-2*t+$fs,ri-0.0,sqrt(2)*2*t);
+
+                //Small key removal
+                translate(coord3(ro,ro,z-small_lock_h-cl-t-$fs))
+                rotate(90-bt*90,[0,0,1])
+                gubg_key(small_lock_h+cl+2*$fs,ri-cl,small_lock_h);
             }
         }
         /* if (false) */

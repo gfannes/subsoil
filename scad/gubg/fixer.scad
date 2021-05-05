@@ -1,4 +1,4 @@
-module mob(d,h,t,cl)
+module gubg_fixer_slider(d,h,t,cl)
 {
     tt = 0.5*t+cl;
 
@@ -30,20 +30,24 @@ module mob(d,h,t,cl)
     }
 }
 
-module fix(d,h,t, cl)
+module gubg_fixer_track(d,h,t, cl)
 {
     translate([cl,0,0])
     difference()
     {
         translate([2*t,0,0])
-        for (f=[-1,1])
         {
-            translate([0,f*d/2,0])
-            cylinder(h,t,t);
+            for (f=[-1,1])
+            {
+                translate([0,f*d/2,0])
+                cylinder(h,t,t);
+            }
+            translate([t/2,-d/2,0])
+            cube([t/2,d,h]);
         }
 
         translate([0,0,-$fs])
-        mob(d,h+2*$fs,t,cl);
+        gubg_fixer_slider(d,h+2*$fs,t,cl);
     }
 }
 
@@ -55,7 +59,7 @@ h = 10;
 t = 2;
 cl = 0.3;
 
-fix(d,h,t,cl);
+gubg_fixer_track(d,h,t,cl);
     /* translate([15,0,0]) */
 translate([cl,0,0])
-    mob(d,h,t, 0);
+    gubg_fixer_slider(d,h,t, 0);

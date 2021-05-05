@@ -1,21 +1,3 @@
-//TODO:
-//* Move USB port down
-//* Merge USB port with Arduino mock
-//* Create 2-layer slider
-//* Swap SCD30
-//* Add cylinders for grove
-//* Add grove connectors to mock
-//* Add some set-back to block to allow insertion of OLED
-//* Rework case lock: t as width and on both sides
-//* Make case lock optional
-//* Print without support or rework block to make it printable without support
-//* Add Arduino support cylinders to mock
-//* Move usable space of case to (0,0)
-//* Add headers and optional wires to Arduino mock
-//* Remove small dots on cylinders for grove
-//* Add stop and block to Arduino and grove mocks
-//* Increase stops in z
-
 $fn = 100;
 $fs = 0.01;
 
@@ -26,133 +8,102 @@ include <gubg/arduino.scad>
 
 t = 2;
 
-b = gubg_arduino_uno_size[0]+6*t;
-d = gubg_arduino_uno_size[1]+6*t+10;
+w = gubg_arduino_uno_size[0]+7*t;
+d = gubg_arduino_uno_size[1]+6*t+19;
 h = 30;
-clearance = 0.4;
+cl = 0.4;
 
-/* if (false) */
-    translate([t,0,0])
-union()
+arduino_h = 2;
+
+module vent_holes()
 {
-    difference()
+    for (xi=[0:8])
     {
-        gubg_box(b,d,h,t, 1, clearance);
-
-        //USB connector
-        translate([-$fs,t+37,t+t+gubg_arduino_uno_size[2]])
-        cube([t+2*$fs,12,7]);
-    }
-    translate([t,2*t,t])
-    union()
-    {
-        for (co=gubg_arduino_uno_holes)
+        x = 6+xi*7.8;
+        for (zi=[0:2])
         {
-            translate(co)
-            union()
-            {
-                cylinder(t,2.5,2);
-                cylinder(t+1,1.2,1.2);
-            }
+            z = 5+zi*8;
+
+            //We use 45-degree cubes to allow printing without support
+            r = 3;
+            translate([x,-3*t-$fs,z])
+            rotate(45,[0,1,0])
+            rotate(-90,[1,0,0])
+            translate([-r/2,-r/2,0])
+            cube([r,r,t+2*$fs]);
         }
-
-        //Stopper on left wall
-        translate([0,17/2,0])
-        gubg_stop(t,17,t+gubg_arduino_uno_size[2],t);
-        translate([0,5/2+gubg_arduino_uno_size[1]-5,0])
-        gubg_stop(t,5,t+gubg_arduino_uno_size[2],t);
-
-        translate([gubg_arduino_uno_size[0],15,0])
-        union()
-        {
-            gubg_block(4*t,12,t+gubg_arduino_uno_size[2], 2, 0.2);
-            color([0,1,1])
-            if (false)
-                translate([-2,0,t+gubg_arduino_uno_size[2]])
-                gubg_slider(4*t,12,2);
-        }
-
-        if (false)
-            translate([0,0,t])
-            gubg_arduino_uno_mock([1,0,0]);
     }
-
-    translate([0,-10,0])
-    gubg_slider(4*t,12,2);
 }
 
 /* if (false) */
-    translate([-b-t,0,0])
+    translate([3*t,0,0])
 union()
 {
-    difference()
+    translate([0,0,t])
     {
-        translate([b,0,0])
-        gubg_box(b,d,h,t, -1, clearance);
+        difference()
+        {
+            translate([-t-cl,-3*t,-t])
+            gubg_box(w,d,h,t, 1, cl);
 
-        color([1,0,0])
-        translate([b-3*t,20+t+2,10])
-        rotate(180,[0,0,1])
-        rotate(180,[1,0,0])
-        gubg_grove_scd30(0.5*clearance);
+            translate([0,0,arduino_h])
+            gubg_arduino_uno_mock(cl);
 
-        color([0,1,0])
-        translate([b-3*t,d-18,2+$fs])
-        rotate(180,[0,0,1])
-        gubg_grove_oled(0.5*clearance);
+            vent_holes();
+        }
+        gubg_arduino_uno_mount(arduino_h, cl);
     }
 
-    //For SCD30
-    translate([b-3*t,20+t+2,0])
-    union()
+    translate([70,-20,0])
+    gubg_arduino_uno_slider(cl);
+
+    if (false)
+        translate([0,0,arduino_h])
+        gubg_arduino_uno_mock(cl);
+}
+
+/* if (false) */
+    translate([-w-t,0,0])
+union()
+{
+    scd30_pos = [w-60-3*t-3*t,0,0];
+    oled_pos  = [w-40-3*t-3*t,d-20-3*t-3*t,0];
+
+    translate([0,0,t])
     {
-        for (co=gubg_grove_scd30_holes)
+        difference()
         {
-            translate([-co[0],co[1],0])
+            translate([w-3*t,-3*t,-t])
+            gubg_box(w,d,h,t, -1, cl);
+
+            //SCD30
             {
-                cylinder(10,2.5,2);
-                cylinder(11,0.5,0.5);
+                color([1,0,0])
+                translate(scd30_pos)
+                gubg_grove_scd30_mock(cl);
             }
-        }
 
-        {
-            rotate(180,[0,0,1])
-            gubg_stop(t+2,15,10+1.5,t);
-
-            translate([-60,12,0])
-            rotate(180, [0,0,1])
-            gubg_block(b-60-4*t,6,10+1.5,t,clearance);
-        }
-    }
-
-    //For OLED
-    translate([b-3*t,d-18+10,0])
-    union()
-    {
-        translate([0,-20,0])
-        {
-            for (co=gubg_grove_oled_holes)
+            //OLED
             {
-                translate([-co[0],co[1]+10,0])
-                {
-                    cylinder(t+1,0.5,0.5);
-                }
+                color([0,1,0])
+                translate(oled_pos)
+                gubg_grove_oled_mock(0.5*cl);
             }
+
+            vent_holes();
         }
 
-        rotate(90,[0,0,1])
-        translate([-20,19,0])
-        gubg_stop(t,10,t+1.5,t);
+        translate(oled_pos)
+        gubg_grove_oled_mount(0, cl);
 
-        rotate(90,[0,0,1])
-        translate([0,19,0])
-        gubg_block(18-10-t,8,t+1.5,t,clearance);
+        translate(scd30_pos)
+        gubg_grove_scd30_mount(0, cl);
     }
 
-    translate([0,-10,0])
-    gubg_slider(b-60-4*t,6,t);
+    translate([0,-20,0])
+    gubg_grove_oled_slider(cl);
 
-    translate([20,-10,0])
-    gubg_slider(18-10-t,8,t);
+    translate([20,-20,0])
+    gubg_grove_scd30_slider(cl);
 }
 
