@@ -8,13 +8,20 @@ gubg_arduino_uno_holes = [
 [66.1, 35.5],
 [15.3, 50.7],
 ];
+gubg_seeeduino_holes = [
+[15,   2],
+[66,   7],
+[66,   35],
+[15.5, 50],
+];
+gubg_arduino_holes = gubg_seeeduino_holes;
 gubg_arduino_uno_fixer = [20,10,2];
 
 module gubg_arduino_uno_mount(h, cl)
 {
     r0 = 2.5;
     r1 = 1;
-    for (co=gubg_arduino_uno_holes)
+    for (co=gubg_arduino_holes)
     {
         translate([co[0],co[1],-$fs])
         {
@@ -25,8 +32,8 @@ module gubg_arduino_uno_mount(h, cl)
         }
     }
 
-    translate([gubg_arduino_uno_size[0],13,0])
-    gubg_fixer_track(gubg_arduino_uno_fixer[0],h+gubg_arduino_uno_fixer[1],gubg_arduino_uno_fixer[2], cl);
+    translate([gubg_arduino_uno_size[0],15,0])
+    gubg_fixer_track(gubg_arduino_uno_fixer[0],h+gubg_arduino_uno_fixer[1],4,gubg_arduino_uno_fixer[2], cl);
 
     t = gubg_arduino_uno_fixer[2];
     translate([-cl,17/2,0])
@@ -37,7 +44,7 @@ module gubg_arduino_uno_mount(h, cl)
 
 module gubg_arduino_uno_slider(cl)
 {
-    gubg_fixer_slider(gubg_arduino_uno_fixer[0],gubg_arduino_uno_fixer[1],gubg_arduino_uno_fixer[2], cl);
+    gubg_fixer_slider(gubg_arduino_uno_fixer[0],gubg_arduino_uno_fixer[1],gubg_arduino_uno_fixer[2],gubg_arduino_uno_size[2],2, cl);
 }
 
 module gubg_arduino_uno_mock(cl)
@@ -73,7 +80,7 @@ module gubg_arduino_uno_mock(cl)
         }
 
         r = (3-cl)/2;
-        for (co=gubg_arduino_uno_holes)
+        for (co=gubg_arduino_holes)
             translate([co[0],co[1],-$fs])
             cylinder(h+2*$fs,r,r);
     }

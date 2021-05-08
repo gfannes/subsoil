@@ -10,26 +10,47 @@ include <gubg/arduino.scad>
 t = 2;
 
 w = gubg_arduino_uno_size[0]+7*t;
-d = gubg_arduino_uno_size[1]+6*t+19;
-h = 30;
+d = gubg_arduino_uno_size[1]+6*t+17;
+h = 40;
 cl = 0.4;
+slider_cl = 0.2;
 
-arduino_h = 2;
 
-module vent_holes()
+module vent_holes_front(bt)
 {
     for (xi=[0:8])
     {
-        x = 6+xi*7.8;
-        for (zi=[0:2])
+        x = 2*t+6.5+xi*7.6;
+        for (zi=[0:3])
         {
-            z = 5+zi*8;
+            z = 2*t+5+zi*8;
 
             //We use 45-degree cubes to allow printing without support
-            r = 3;
-            translate([x,-3*t-$fs,z])
+            r = 4.5;
+            a = w/2; b = -w/2;
+            translate([x+a*bt+b,-$fs,z])
             rotate(45,[0,1,0])
             rotate(-90,[1,0,0])
+            translate([-r/2,-r/2,0])
+            cube([r,r,t+2*$fs]);
+        }
+    }
+}
+module vent_holes_side(bt)
+{
+    for (yi=[0:8])
+    {
+        y = 2*t+6+yi*7.8;
+        for (zi=[0:3])
+        {
+            z = 2*t+5+zi*8;
+
+            //We use 45-degree cubes to allow printing without support
+            r = 5;
+            a = t/2; b = -t/2;
+            translate([-$fs+a*bt+b,y,z])
+            rotate(90,[0,1,0])
+            rotate(45,[0,0,1])
             translate([-r/2,-r/2,0])
             cube([r,r,t+2*$fs]);
         }
@@ -40,23 +61,32 @@ module vent_holes()
     translate([3*t,0,0])
 union()
 {
+    arduino_h = 2.5;
+    arduino_pos = [0,-1,0];
+
     translate([0,0,t])
     {
         difference()
         {
-            translate([-t-cl,-3*t,-t])
-            gubg_box(w,d,h,t, 1, cl);
+            translate([-t-cl,-2*t,-t])
+            difference()
+            {
+                gubg_box(w,d,h,t, 1, cl);
+                vent_holes_front(1);
+                vent_holes_side(1);
+            }
 
+            translate(arduino_pos)
             translate([0,0,arduino_h])
             gubg_arduino_uno_mock(cl);
 
-            vent_holes();
         }
+        translate(arduino_pos)
         gubg_arduino_uno_mount(arduino_h, cl);
     }
 
     translate([70,-20,0])
-    gubg_arduino_uno_slider(cl);
+    gubg_arduino_uno_slider(slider_cl);
 
     if (false)
         translate([0,0,arduino_h])
@@ -75,8 +105,13 @@ union()
     {
         difference()
         {
-            translate([w-3*t,-3*t,-t])
-            gubg_box(w,d,h,t, -1, cl);
+            translate([w-3*t,-2*t,-t])
+            difference()
+            {
+                gubg_box(w,d,h,t, -1, cl);
+                vent_holes_front(-1);
+                vent_holes_side(-1);
+            }
 
             //SCD30
             {
@@ -89,7 +124,7 @@ union()
             {
                 color([0,1,0])
                 translate(oled_pos)
-                gubg_grove_oled_mock(0.5*cl);
+                gubg_grove_oled_mock(cl);
             }
 
             //Buzzer
@@ -98,8 +133,6 @@ union()
                 translate(buzzer_pos)
                 gubg_buzzer_mock(cl);
             }
-
-            vent_holes();
         }
 
         translate(oled_pos)
@@ -114,12 +147,12 @@ union()
     }
 
     translate([0,-20,0])
-    gubg_grove_oled_slider(cl);
+    gubg_grove_oled_slider(slider_cl);
 
     translate([20,-20,0])
-    gubg_grove_scd30_slider(cl);
+    gubg_grove_scd30_slider(slider_cl);
 
     translate([40,-20,0])
-    gubg_buzzer_slider(t,cl);
+    gubg_buzzer_slider(t,slider_cl);
 }
 

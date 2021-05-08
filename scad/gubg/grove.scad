@@ -3,7 +3,7 @@ use <fixer.scad>
 
 gubg_grove_scd30_ears  = [[0,30], [10,0],[50,0],[60,30],[30,40]];
 gubg_grove_scd30_holes = [[0,10], [30,0],[60,10],[50,40],[10,40]];
-gubg_grove_scd30_fixer = [20,10,2];
+gubg_grove_scd30_fixer = [20,10,2,1.5];
 
 module gubg_grove_scd30_mock(cl)
 {
@@ -59,8 +59,8 @@ module gubg_grove_scd30_mock(cl)
             }
 
             //Wires on the bottom
-            translate([3-cl,1.5-cl,-1.5-1-cl+$fs])
-            cube([10+2*cl,2+2*cl,1+cl]);
+            translate([2-cl,0.5-cl,-1.5-1-cl+$fs])
+            cube([12+2*cl,4+2*cl,1+cl]);
         }
     }
 }
@@ -85,9 +85,9 @@ module gubg_grove_scd30_mount(h,cl)
 
     translate([30,40,0])
     rotate(90,[0,0,1])
-    gubg_fixer_track(gubg_grove_scd30_fixer[0],h+gubg_grove_scd30_fixer[1],gubg_grove_scd30_fixer[2], cl);
+    gubg_fixer_track(gubg_grove_scd30_fixer[0],h+gubg_grove_scd30_fixer[1],4,gubg_grove_scd30_fixer[2], cl);
 
-    translate([20,0,0])
+    translate([20,-cl,0])
     {
         d = 12;
         rotate(90,[0,0,1])
@@ -101,12 +101,12 @@ module gubg_grove_scd30_mount(h,cl)
 
 module gubg_grove_scd30_slider(cl)
 {
-    gubg_fixer_slider(gubg_grove_scd30_fixer[0],gubg_grove_scd30_fixer[1],gubg_grove_scd30_fixer[2], cl);
+    gubg_fixer_slider(gubg_grove_scd30_fixer[0],gubg_grove_scd30_fixer[1],gubg_grove_scd30_fixer[2],gubg_grove_scd30_fixer[3],2, cl);
 }
 
 gubg_grove_oled_ears  = [[10,0],[40,10],[10,20]];
 gubg_grove_oled_holes = [[0,10],[30,0],[30,20]];
-gubg_grove_oled_fixer = [20,5,2];
+gubg_grove_oled_fixer = [20,5,2,1.5];
 
 module gubg_grove_oled_mock(cl)
 {
@@ -162,18 +162,19 @@ module gubg_grove_oled_mount(h,cl)
         cylinder(1.5,(4-cl)/2,0);
     }
 
-    translate([20,20,0])
+    translate([26,20+cl,0])
     rotate(-90,[0,0,1])
-    gubg_stop(2,12,h+1.5+cl,2);
+    gubg_stop(2,24,h+1.5+cl,2);
+
 
     translate([20,0,0])
     rotate(-90,[0,0,1])
-    gubg_fixer_track(gubg_grove_oled_fixer[0],h+gubg_grove_oled_fixer[1],gubg_grove_oled_fixer[2], cl);
+    gubg_fixer_track(gubg_grove_oled_fixer[0],h+gubg_grove_oled_fixer[1],4,gubg_grove_oled_fixer[2], cl);
 }
 
 module gubg_grove_oled_slider(cl)
 {
-    gubg_fixer_slider(gubg_grove_oled_fixer[0],gubg_grove_oled_fixer[1],gubg_grove_oled_fixer[2], cl);
+    gubg_fixer_slider(gubg_grove_oled_fixer[0],gubg_grove_oled_fixer[1],gubg_grove_oled_fixer[2],gubg_grove_oled_fixer[3],2, cl);
 }
 
 if (false)

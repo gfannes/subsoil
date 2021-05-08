@@ -14,7 +14,7 @@ module gubg_box(x,y,z,t,bt,cl)
         {
             r = 0.3*t;
             d = 1.75*t;
-            small_lock_h = 3*t;
+            small_lock_h = z/3;
 
             //Base plate
             linear_extrude(t)
@@ -50,6 +50,19 @@ module gubg_box(x,y,z,t,bt,cl)
                     //Small lock
                     translate(coord3(ro,ro,z-small_lock_h-cl-t))
                     cylinder(small_lock_h+cl,ro,ro);
+                    skew_matrix = [
+                    [ 1  , 0  , 0  , 0   ],
+                    [ 0  , 1  , 0.5, 0   ],
+                    [ 0  , 0  , 1  , 0   ],
+                    [ 0  , 0  , 0  , 1   ]
+                    ];
+                    translate(coord3(ro,ro,z-small_lock_h-cl-t))
+                    rotate(180,[1,0,0])
+                    rotate(bt*45,[0,0,1])
+                    multmatrix(skew_matrix) {
+                        cylinder(2*ro,ro,0);
+                    }
+
 
                     //Small key
                     translate(coord3(x-ro,y-ro,0))
@@ -74,17 +87,17 @@ module gubg_box(x,y,z,t,bt,cl)
                 //Small key removal
                 translate(coord3(ro,ro,z-small_lock_h-cl-t-$fs))
                 rotate(90-bt*90,[0,0,1])
-                gubg_key(small_lock_h+cl+2*$fs,ri-cl,small_lock_h);
+                gubg_key(small_lock_h+cl+2*$fs,ri-0.0,small_lock_h);
             }
         }
         /* if (false) */
-            hull()
-            {
-                translate(coord3(ro,ro,0))      cylinder(z+$fs,ro,ro);
-                translate(coord3(x-ro,ro,0))   cylinder(z+$fs,ro,ro);
-                translate(coord3(ro,y-ro,0))   cylinder(z+$fs,ro,ro);
-                translate(coord3(x-ro,y-ro,0)) cylinder(z+$fs,ro,ro);
-            }
+        hull()
+        {
+            translate(coord3(ro,ro,0))      cylinder(z+$fs,ro,ro);
+            translate(coord3(x-ro,ro,0))   cylinder(z+$fs,ro,ro);
+            translate(coord3(ro,y-ro,0))   cylinder(z+$fs,ro,ro);
+            translate(coord3(x-ro,y-ro,0)) cylinder(z+$fs,ro,ro);
+        }
     }
 }
 
@@ -97,6 +110,6 @@ h = 40;
 //0.2 is very tight on CR10S-Pro
 translate([2,0,0])
     gubg_box(b,d,h,t,1,0.2);
-//0.3 is very tight on CR10S-Pro
+    //0.3 is very tight on CR10S-Pro
 translate([-2,0,0])
     gubg_box(b,d,h,t,-1,0.3);
