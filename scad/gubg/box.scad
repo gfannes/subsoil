@@ -45,7 +45,7 @@ module gubg_box(x,y,z,t,bt,cl)
                     key_angle =-45*bt-90;
                     translate(coord3(x-ro,ro,t))
                     rotate(key_angle, [0,0,1])
-                    gubg_key(z-2*t,ri-cl,sqrt(2)*2*t);
+                    gubg_key(z-2*t,ri-cl,ri/2,sqrt(2)*2*t);
 
                     //Small lock
                     translate(coord3(ro,ro,z-small_lock_h-cl-t))
@@ -69,7 +69,7 @@ module gubg_box(x,y,z,t,bt,cl)
                     {
                         small_key_angle = 90+bt*90;
                         rotate(small_key_angle,[0,0,1])
-                        gubg_key(small_lock_h,ri-cl,small_lock_h);
+                        gubg_key(small_lock_h,ri-cl,ri/2,2*ro);
 
                         if (false)
                             cylinder(5,ro,ro);
@@ -82,12 +82,12 @@ module gubg_box(x,y,z,t,bt,cl)
                 lock_angle = -45*bt+90;
                 translate(coord3(ro,y-ro,t))
                 rotate(lock_angle, [0,0,1])
-                gubg_key(z-2*t+$fs,ri-0.0,sqrt(2)*2*t);
+                gubg_key(z-2*t+$fs,ri-0.0,ri+cl,sqrt(2)*2*t);
 
                 //Small key removal
                 translate(coord3(ro,ro,z-small_lock_h-cl-t-$fs))
                 rotate(90-bt*90,[0,0,1])
-                gubg_key(small_lock_h+cl+2*$fs,ri-0.0,small_lock_h);
+                gubg_key(small_lock_h+cl+2*$fs,ri-0.0,ri+cl,small_lock_h);
             }
         }
         /* if (false) */

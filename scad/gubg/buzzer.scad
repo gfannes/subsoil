@@ -2,7 +2,7 @@ use <fixer.scad>
 
 module gubg_buzzer_mock(cl)
 {
-    r = (11.8+cl)/2;
+    r = (11.5+cl)/2;
     cylinder(8.5,r,r);
     translate([0,0,-5])
     cylinder(5+$fs,1.5,1.5);
@@ -10,7 +10,7 @@ module gubg_buzzer_mock(cl)
 
 module gubg_buzzer_mount(t,cl)
 {
-    r = (11.8+t)/2;
+    r = (11.5+t)/2;
     difference()
     {
         cylinder(8.5+t,r,r);
@@ -28,7 +28,7 @@ module gubg_buzzer_mount(t,cl)
 
 module gubg_buzzer_slider(t,cl)
 {
-    gubg_fixer_slider(20,5,t,0,1,cl);
+    gubg_fixer_slider(20,5+4,t,t/2,0,1,cl);
 }
 
 if (false)
@@ -44,6 +44,6 @@ if (false)
     translate([0,0,t])
     gubg_buzzer_mock(0);
 
-    translate([(11.8+t)/2+0.3,0,0])
+    translate([(11.5+t)/2+0.3,0,0])
     gubg_buzzer_slider(t,0.0);
 }

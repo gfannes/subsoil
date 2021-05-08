@@ -1,5 +1,9 @@
+//TODO:
+//* Conical key
 $fn = 100;
 $fs = 0.01;
+
+
 
 use <gubg/box.scad>
 use <gubg/stop.scad>
@@ -9,8 +13,8 @@ include <gubg/arduino.scad>
 
 t = 2;
 
-w = gubg_arduino_uno_size[0]+7*t;
-d = gubg_arduino_uno_size[1]+6*t+17;
+w = 82;
+d = 82;
 h = 40;
 cl = 0.4;
 slider_cl = 0.2;
@@ -98,7 +102,7 @@ union()
 union()
 {
     scd30_pos  = [w-60-3*t-3*t,0,0];
-    oled_pos   = [w-40-3*t-3*t,d-20-3*t-3*t,0];
+    oled_pos   = [w-40-3*t-3*t,d-20-2*t-3*t,0];
     buzzer_pos = [5,oled_pos[1]+10,0];
 
     translate([0,0,t])

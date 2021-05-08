@@ -40,11 +40,14 @@ module gubg_arduino_uno_mount(h, cl)
     gubg_stop(t,17,h+cl+gubg_arduino_uno_size[2],t);
     translate([-cl,4/2+gubg_arduino_uno_size[1]-4,0])
     gubg_stop(t,4,h+cl+gubg_arduino_uno_size[2],t);
+
+    translate([0,gubg_arduino_uno_size[1]+cl,0])
+    cube([gubg_arduino_uno_size[0],2,h+3]);
 }
 
 module gubg_arduino_uno_slider(cl)
 {
-    gubg_fixer_slider(gubg_arduino_uno_fixer[0],gubg_arduino_uno_fixer[1],gubg_arduino_uno_fixer[2],gubg_arduino_uno_size[2],2, cl);
+    gubg_fixer_slider(gubg_arduino_uno_fixer[0],gubg_arduino_uno_fixer[1]+4,gubg_arduino_uno_fixer[2],gubg_arduino_uno_fixer[2]/2,gubg_arduino_uno_size[2],2, cl);
 }
 
 module gubg_arduino_uno_mock(cl)
@@ -64,7 +67,7 @@ module gubg_arduino_uno_mock(cl)
             translate([0,0,h])
             {
                 //USB connector
-                translate([-18,37,-(7-2.5)/2])
+                translate([-18,37,-(7-3)/2])
                 cube([18,12,7]);
 
                 //Grove and Power connector

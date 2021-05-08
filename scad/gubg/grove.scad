@@ -72,7 +72,7 @@ module gubg_grove_scd30_mount(h,cl)
         {
             cylinder(h,2.25,2.25);
             translate([0,0,h])
-            cylinder(1.5,(1.5-cl)/2,0);
+            cylinder(1.5,(2-cl)/2,0);
         }
 
     for (co=gubg_grove_scd30_holes)
@@ -80,7 +80,7 @@ module gubg_grove_scd30_mount(h,cl)
         {
             cylinder(h,3.5,3.5);
             translate([0,0,h])
-            cylinder(1.5,(4-cl)/2,0);
+            cylinder(1.5,(5-cl)/2,0);
         }
 
     translate([30,40,0])
@@ -101,7 +101,7 @@ module gubg_grove_scd30_mount(h,cl)
 
 module gubg_grove_scd30_slider(cl)
 {
-    gubg_fixer_slider(gubg_grove_scd30_fixer[0],gubg_grove_scd30_fixer[1],gubg_grove_scd30_fixer[2],gubg_grove_scd30_fixer[3],2, cl);
+    gubg_fixer_slider(gubg_grove_scd30_fixer[0],gubg_grove_scd30_fixer[1]+4,gubg_grove_scd30_fixer[2],gubg_grove_scd30_fixer[2]/2,gubg_grove_scd30_fixer[3],2, cl);
 }
 
 gubg_grove_oled_ears  = [[10,0],[40,10],[10,20]];
@@ -141,8 +141,8 @@ module gubg_grove_oled_mock(cl)
     cube([10,13,5]);
 
     //Screen
-    translate([10.5-cl,-cl,-2-cl+$fs])
-    cube([26.5+2*cl,20+2*cl,2+cl]);
+    translate([10.4-cl,-cl,-2-cl+$fs])
+    cube([26.7+2*cl,20+2*cl,2+cl]);
 }
 
 module gubg_grove_oled_mount(h,cl)
@@ -152,14 +152,14 @@ module gubg_grove_oled_mount(h,cl)
         {
             cylinder(h,2.25,2.25);
             translate([0,0,h])
-            cylinder(1.5,(1.5-cl)/2,0);
+            cylinder(1.5,(2-cl)/2,0);
         }
 
     translate(gubg_grove_oled_holes[0])
     {
         cylinder(h,3.5,3.5);
         translate([0,0,h])
-        cylinder(1.5,(4-cl)/2,0);
+        cylinder(1.5,(5-cl)/2,0);
     }
 
     translate([26,20+cl,0])
@@ -174,7 +174,7 @@ module gubg_grove_oled_mount(h,cl)
 
 module gubg_grove_oled_slider(cl)
 {
-    gubg_fixer_slider(gubg_grove_oled_fixer[0],gubg_grove_oled_fixer[1],gubg_grove_oled_fixer[2],gubg_grove_oled_fixer[3],2, cl);
+    gubg_fixer_slider(gubg_grove_oled_fixer[0],gubg_grove_oled_fixer[1]+4,gubg_grove_oled_fixer[2],gubg_grove_oled_fixer[2]/2,gubg_grove_oled_fixer[3],2, cl);
 }
 
 if (false)
